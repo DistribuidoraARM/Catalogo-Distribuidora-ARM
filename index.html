@@ -1,51 +1,110 @@
+# index.html
+
+```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Catálogo Distribuidora X</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header>
     <h1>Distribuidora X — Catálogo</h1>
   </header>
-
   <div class="container">
     <div class="grid" id="catalogo"></div>
   </div>
-
-  <!-- Icono flotante del carrito -->
-  <div id="cart-btn" title="Abrir carrito">
-    🛒<span id="cart-badge" style="display:none">0</span>
+  <!-- icono flotante -->
+  <div id="cart-btn" aria-label="Abrir carrito" title="Abrir carrito">
+    <span id="cart-emoji">🛒</span>
+    <div id="cart-badge" style="display:none">0</div>
   </div>
-
-  <!-- Overlay -->
   <div class="overlay" id="overlay"></div>
-
-  <!-- Panel lateral del carrito -->
-  <aside class="cart-panel" id="cart-panel">
+  <aside class="cart-panel" id="cart-panel" aria-hidden="true">
     <div class="cart-header">
       <strong>Tu carrito</strong>
       <button id="close-cart" class="small-btn">✕</button>
     </div>
-    <div class="cart-body" id="cart-body">
-      <!-- Aquí se inyectan los productos del carrito -->
-    </div>
+    <div class="cart-body" id="cart-body"></div>
     <div class="cart-footer">
       <div>Total: <strong>$<span id="cart-total">0</span> MXN</strong></div>
       <div class="checkout-form">
-        <input id="nombre" type="text" placeholder="Nombre" required>
-        <input id="telefono" type="text" placeholder="Teléfono" required>
-        <input id="direccion" type="text" placeholder="Dirección" required>
-        <input id="email" type="email" placeholder="Email" required>
+        <input id="nombre" type="text" placeholder="Nombre" required />
+        <input id="telefono" type="text" placeholder="Teléfono" required />
+        <input id="direccion" type="text" placeholder="Dirección" required />
+        <input id="email" type="email" placeholder="Email" required />
         <button id="submit-order" class="checkout-btn">Finalizar pedido</button>
       </div>
-      <small>Al finalizar recibirás confirmación y el pedido quedará guardado en tu Google Sheets.</small>
+      <div style="font-size:12px;margin-top:8px;">Tu pedido quedará registrado.</div>
     </div>
   </aside>
-
   <script src="script.js"></script>
 </body>
 </html>
+```
 
+---
+
+# styles.css
+
+```css
+/* (Tu CSS existente aquí — sin cambios visuales mayores)
+   Puedes pegar exactamente el styles.css que ya tenías. */
+
+/* Solo asegúrate que este archivo se llame styles.css */
+```
+
+---
+
+# script.js
+
+```javascript
+// CONFIG
+const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSe4qzkJIvgWWS0OhKrrOu2BJbuaHRNR5skoWoFQW3Sv-3430Q/formResponse";
+const ENTRY = {
+  nombre: 'entry.313556667',
+  telefono: 'entry.675797328',
+  direccion: 'entry.1917704239',
+  email: 'entry.865391267',
+  pedido: 'entry.1631925112',
+  total: 'entry.1054448594'
+};
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  const productos = [
+    { id:1,nombre:'Sombrero Palma Fina',precio:189,imagen:'https://via.placeholder.com/400x300?text=Sombrero+Palma+Fina' },
+    // ... (resto de productos como antes)
+  ];
+
+  let carrito = JSON.parse(localStorage.getItem('amat_carrito_v1')||'[]');
+
+  const catalogoEl = document.getElementById('catalogo');
+
+  function renderProductos(){
+    catalogoEl.innerHTML = '';
+    productos.forEach((p,i)=>{
+      const card = document.createElement('article');
+      card.className = 'card';
+      card.innerHTML = `
+        <img src="${p.imagen}" alt="${p.nombre}" />
+        <h3>${p.nombre}</h3>
+        <div class="price">$${p.precio} MXN</div>
+        <div style="color:#ef4444;font-size:0.9rem;font-weight:600;margin-top:4px;">¡Ahorra comprando mayoreo!</div>
+        <button class="btn" data-index="${i}">Agregar al carrito</button>
+      `;
+      catalogoEl.appendChild(card);
+    });
+  }
+
+  function saveCart(){ localStorage.setItem('amat_carrito_v1', JSON.stringify(carrito)); }
+
+  function renderCart(){ /* ... (igual que tu script anterior) */ }
+
+  // listeners para agregar al carrito, etc.
+
+  renderProductos();
+  renderCart();
+});
+```
