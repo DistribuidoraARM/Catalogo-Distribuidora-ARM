@@ -150,3 +150,176 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const node = document.createElement('div');
       node.className = 'cart-item';
+
+      node.innerHTML = `
+        <img src="${item.imagen}">
+        <div class="meta">
+          <b>${item.nombre}</b>
+          <div style="font-size:13px;color:#6b7280">
+            $${precioUnit} MXN c/u
+          </div>
+        </div>
+        <div>
+          <input class="qty" type="number" min="1"
+            value="${item.cantidad}" data-index="${index}">
+          <button class="small-btn" data-remove="${index}">
+            Eliminar
+          </button>
+        </div>
+      `;
+
+      cartBody.appendChild(node);
+    });
+
+    const total = carrito.reduce((s, i) => {
+      const precio =
+        i.cantidad >= i.minMayoreo
+          ? i.precioMayoreo
+          : i.precio;
+      return s + precio * i.cantidad;
+    }, 0);
+
+    cartTotalEl.textContent = total;
+    updateBadge();
+  }
+
+  /****************************************************
+   * EVENTOS CATÁLOGO
+   ****************************************************/
+  catalogoEl.addEventListener('click', e => {
+    const btn = e.target.closest('button[data-id]');
+    if (!btn) return;
+
+    const id = Number(btn.dataset.id);
+    const producto = productosOriginales.find(
+      p => p.id === id
+    );
+
+    const existing = carrito.find(x => x.id === id);
+    if (existing) existing.cantidad++;
+    else carrito.push({ ...producto, cantidad: 1 });
+
+    saveCart();
+    renderCart();
+  });
+
+  cartBody.addEventListener('change', e => {
+    const input = e.target.closest('input.qty');
+    if (!input) return;
+
+    const idx = Number(input.dataset.index);
+    carrito[idx].cantidad = parseInt(input.value) || 1;
+
+    saveCart();
+    renderCart();
+  });
+
+  cartBody.addEventListener('click', e => {
+    const rm = e.target.closest('button[data-remove]');
+    if (!rm) return;
+
+    carrito.splice(Number(rm.dataset.remove), 1);
+    saveCart();
+    renderCart();
+  });
+
+  /****************************************************
+   * FILTROS POR CATEGORÍA
+   ****************************************************/
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document
+        .querySelectorAll('.filter-btn')
+        .forEach(b => b.classList.remove('active'));
+
+      btn.classList.add('active');
+      filtroActual = btn.dataset.filter;
+      renderProductos();
+    });
+  });
+
+  /****************************************************
+   * ABRIR / CERRAR CARRITO
+   ****************************************************/
+  function openCart() {
+    cartPanel.classList.add('open');
+    overlay.classList.add('show');
+  }
+
+  function closeCartPanel() {
+    cartPanel.classList.remove('open');
+    overlay.classList.remove('show');
+  }
+
+  cartBtn.addEventListener('click', () =>
+    cartPanel.classList.contains('open')
+      ? closeCartPanel()
+      : openCart()
+  );
+
+  closeCart.addEventListener('click', closeCartPanel);
+  overlay.addEventListener('click', closeCartPanel);
+
+  /****************************************************
+   * ENVIAR PEDIDO
+   ****************************************************/
+  submitBtn.addEventListener('click', () => {
+    if (carrito.length === 0)
+      return alert('El carrito está vacío');
+
+    const nombre = document
+      .getElementById('nombre')
+      .value.trim();
+    const telefono = document
+      .getElementById('telefono')
+      .value.trim();
+    const direccion = document
+      .getElementById('direccion')
+      .value.trim();
+    const email = document
+      .getElementById('email')
+      .value.trim();
+
+    if (!nombre || !telefono || !direccion || !email)
+      return alert('Completa tus datos');
+
+    const pedidoTexto = carrito
+      .map(
+        i =>
+          `${i.nombre} x${i.cantidad}`
+      )
+      .join('\n');
+
+    const total = cartTotalEl.textContent;
+
+    const fd = new FormData();
+    fd.append(ENTRY.nombre, nombre);
+    fd.append(ENTRY.telefono, telefono);
+    fd.append(ENTRY.direccion, direccion);
+    fd.append(ENTRY.email, email);
+    fd.append(ENTRY.pedido, pedidoTexto);
+    fd.append(ENTRY.total, total);
+
+    fetch(FORM_URL, {
+      method: 'POST',
+      body: fd,
+      mode: 'no-cors'
+    })
+      .then(() => {
+        alert('Pedido enviado con éxito');
+        carrito = [];
+        saveCart();
+        renderCart();
+        closeCartPanel();
+      })
+      .catch(() =>
+        alert('Error al enviar pedido')
+      );
+  });
+
+  /****************************************************
+   * INICIALIZAR
+   ****************************************************/
+  cargarProductos();
+  renderCart();
+});
