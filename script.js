@@ -2,24 +2,15 @@
  * CONFIGURACIÓN GOOGLE SHEETS
  ****************************************************/
 const SHEET_ID = '1ZYDo3phbc-IhaD-blVlaH7gbYkoyjhhX-I7Dtm06Cuo';
-
-// Alias para ocultar nombres reales de hojas
-const aliasCatalogos = {
-  a: 'ClienteA',
-  b: 'ClienteB'
-};
-
 const params = new URLSearchParams(window.location.search);
-const alias = params.get('catalogo') || 'a';
-const catalogoSeleccionado = aliasCatalogos[alias] || 'ClienteA';
-
+const catalogoSeleccionado = params.get('catalogo') || 'ClienteA';
 const SHEET_URL = `https://opensheet.elk.sh/${SHEET_ID}/${catalogoSeleccionado}`;
 
 /****************************************************
  * CONFIGURACIÓN GOOGLE FORMS
  ****************************************************/
 const FORM_URL =
-  'https://docs.google.com/forms/d/e/1FAIpQLSe4qzkJIvgWWS0OhKrrOu2BJbuaHRNR5skoWoFQW3Sv-3430Q/formResponse';
+  "https://docs.google.com/forms/d/e/1FAIpQLSe4qzkJIvgWWS0OhKrrOu2BJbuaHRNR5skoWoFQW3Sv-3430Q/formResponse";
 
 const ENTRY = {
   nombre: 'entry.313556667',
@@ -34,9 +25,7 @@ const ENTRY = {
  * VARIABLES GLOBALES
  ****************************************************/
 let productos = [];
-let productosOriginales = [];
 let carrito = JSON.parse(localStorage.getItem('amat_carrito_v1') || '[]');
-let filtroActual = 'Todos';
 
 /****************************************************
  * DOM READY
@@ -60,55 +49,51 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch(SHEET_URL);
       const data = await res.json();
 
-      productosOriginales = data.map((row, index) => ({
-        id: Number(row.id) || index + 1,
+      productos = data.map((row, index) => ({
+        id: row.id || index + 1,
         nombre: row.nombre,
-        precio: Number(String(row.precio).replace(/[^0-9.]/g, '')),
-        precioMayoreo: Number(
-          String(row.precio_mayoreo).replace(/[^0-9.]/g, '')
-        ),
-        minMayoreo: Number(row.minimo_mayoreo) || 0,
-        categoria: row.categoria || 'Otros',
-        imagen:
-          row.imagen ||
-          'https://via.placeholder.com/400x300?text=Producto'
+        color: row.color || '',
+        precio: Number(row.precio),
+        precioMayoreo: Number(row.precio_mayoreo),
+        minMayoreo: Number(row.minimo_mayoreo),
+        imagen: row.imagen
       }));
 
-      productos = productosOriginales;
       renderProductos();
     } catch (err) {
-      console.error('Error cargando productos:', err);
+      console.error(err);
       alert('No se pudieron cargar los productos');
     }
   }
 
   /****************************************************
-   * RENDER CATÁLOGO (CON FILTROS)
+   * RENDER DEL CATÁLOGO
    ****************************************************/
   function renderProductos() {
     catalogoEl.innerHTML = '';
 
-    const lista =
-      filtroActual === 'Todos'
-        ? productosOriginales
-        : productosOriginales.filter(
-            p => p.categoria === filtroActual
-          );
-
-    lista.forEach(p => {
+    productos.forEach((p, i) => {
       const card = document.createElement('article');
       card.className = 'card';
+
+      const ahorro =
+        p.minMayoreo > 0
+          ? `Ahorra $${(p.precio - p.precioMayoreo).toFixed(2)} MXN desde ${p.minMayoreo} pzas`
+          : '';
 
       card.innerHTML = `
         <img src="${p.imagen}" alt="${p.nombre}">
         <h3>${p.nombre}</h3>
+        ${p.color ? `<div style="font-size:13px;color:#6b7280">${p.color}</div>` : ''}
         <div class="price">$${p.precio} MXN</div>
-        <div style="font-size:13px;color:#16a34a;margin-bottom:8px">
-          Mayoreo: $${p.precioMayoreo} desde ${p.minMayoreo} pzas
-        </div>
-        <button class="btn" data-id="${p.id}">
-          Agregar al carrito
-        </button>
+        ${
+          p.precioMayoreo
+            ? `<div style="font-size:13px;color:#16a34a;margin-bottom:8px">
+                Mayoreo: $${p.precioMayoreo} MXN · ${ahorro}
+               </div>`
+            : ''
+        }
+        <button class="btn" data-index="${i}">Agregar al carrito</button>
       `;
 
       catalogoEl.appendChild(card);
@@ -116,17 +101,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /****************************************************
-   * CARRITO
+   * UTILIDADES CARRITO
    ****************************************************/
   function saveCart() {
     localStorage.setItem('amat_carrito_v1', JSON.stringify(carrito));
   }
 
   function updateBadge() {
-    const cantidad = carrito.reduce(
-      (s, i) => s + i.cantidad,
-      0
-    );
+    const cantidad = carrito.reduce((s, i) => s + i.cantidad, 0);
     cartBadge.style.display = cantidad > 0 ? 'flex' : 'none';
     cartBadge.textContent = cantidad;
   }
@@ -142,11 +124,15 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    let total = 0;
+
     carrito.forEach((item, index) => {
       const precioUnit =
         item.cantidad >= item.minMayoreo
           ? item.precioMayoreo
           : item.precio;
+
+      total += precioUnit * item.cantidad;
 
       const node = document.createElement('div');
       node.className = 'cart-item';
@@ -155,6 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <img src="${item.imagen}">
         <div class="meta">
           <b>${item.nombre}</b>
+          ${item.color ? `<div style="font-size:12px">${item.color}</div>` : ''}
           <div style="font-size:13px;color:#6b7280">
             $${precioUnit} MXN c/u
           </div>
@@ -162,24 +149,14 @@ document.addEventListener('DOMContentLoaded', () => {
         <div>
           <input class="qty" type="number" min="1"
             value="${item.cantidad}" data-index="${index}">
-          <button class="small-btn" data-remove="${index}">
-            Eliminar
-          </button>
+          <button class="small-btn" data-remove="${index}">Eliminar</button>
         </div>
       `;
 
       cartBody.appendChild(node);
     });
 
-    const total = carrito.reduce((s, i) => {
-      const precio =
-        i.cantidad >= i.minMayoreo
-          ? i.precioMayoreo
-          : i.precio;
-      return s + precio * i.cantidad;
-    }, 0);
-
-    cartTotalEl.textContent = total;
+    cartTotalEl.textContent = total.toFixed(2);
     updateBadge();
   }
 
@@ -187,17 +164,21 @@ document.addEventListener('DOMContentLoaded', () => {
    * EVENTOS CATÁLOGO
    ****************************************************/
   catalogoEl.addEventListener('click', e => {
-    const btn = e.target.closest('button[data-id]');
+    const btn = e.target.closest('button[data-index]');
     if (!btn) return;
 
-    const id = Number(btn.dataset.id);
-    const producto = productosOriginales.find(
-      p => p.id === id
+    const idx = Number(btn.dataset.index);
+    const p = productos[idx];
+
+    const existing = carrito.find(
+      x => x.id === p.id && x.color === p.color
     );
 
-    const existing = carrito.find(x => x.id === id);
-    if (existing) existing.cantidad++;
-    else carrito.push({ ...producto, cantidad: 1 });
+    if (existing) {
+      existing.cantidad++;
+    } else {
+      carrito.push({ ...p, cantidad: 1 });
+    }
 
     saveCart();
     renderCart();
@@ -224,61 +205,33 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /****************************************************
-   * FILTROS POR CATEGORÍA
-   ****************************************************/
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document
-        .querySelectorAll('.filter-btn')
-        .forEach(b => b.classList.remove('active'));
-
-      btn.classList.add('active');
-      filtroActual = btn.dataset.filter;
-      renderProductos();
-    });
-  });
-
-  /****************************************************
    * ABRIR / CERRAR CARRITO
    ****************************************************/
   function openCart() {
     cartPanel.classList.add('open');
     overlay.classList.add('show');
   }
-
   function closeCartPanel() {
     cartPanel.classList.remove('open');
     overlay.classList.remove('show');
   }
 
   cartBtn.addEventListener('click', () =>
-    cartPanel.classList.contains('open')
-      ? closeCartPanel()
-      : openCart()
+    cartPanel.classList.contains('open') ? closeCartPanel() : openCart()
   );
-
   closeCart.addEventListener('click', closeCartPanel);
   overlay.addEventListener('click', closeCartPanel);
 
   /****************************************************
-   * ENVIAR PEDIDO
+   * ENVIAR PEDIDO (GOOGLE FORMS)
    ****************************************************/
   submitBtn.addEventListener('click', () => {
-    if (carrito.length === 0)
-      return alert('El carrito está vacío');
+    if (carrito.length === 0) return alert('El carrito está vacío');
 
-    const nombre = document
-      .getElementById('nombre')
-      .value.trim();
-    const telefono = document
-      .getElementById('telefono')
-      .value.trim();
-    const direccion = document
-      .getElementById('direccion')
-      .value.trim();
-    const email = document
-      .getElementById('email')
-      .value.trim();
+    const nombre = document.getElementById('nombre').value.trim();
+    const telefono = document.getElementById('telefono').value.trim();
+    const direccion = document.getElementById('direccion').value.trim();
+    const email = document.getElementById('email').value.trim();
 
     if (!nombre || !telefono || !direccion || !email)
       return alert('Completa tus datos');
@@ -286,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const pedidoTexto = carrito
       .map(
         i =>
-          `${i.nombre} x${i.cantidad}`
+          `${i.nombre} ${i.color ? '(' + i.color + ')' : ''} x${i.cantidad}`
       )
       .join('\n');
 
@@ -300,11 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fd.append(ENTRY.pedido, pedidoTexto);
     fd.append(ENTRY.total, total);
 
-    fetch(FORM_URL, {
-      method: 'POST',
-      body: fd,
-      mode: 'no-cors'
-    })
+    fetch(FORM_URL, { method: 'POST', body: fd, mode: 'no-cors' })
       .then(() => {
         alert('Pedido enviado con éxito');
         carrito = [];
@@ -312,9 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCart();
         closeCartPanel();
       })
-      .catch(() =>
-        alert('Error al enviar pedido')
-      );
+      .catch(() => alert('Error al enviar pedido'));
   });
 
   /****************************************************
@@ -323,3 +270,4 @@ document.addEventListener('DOMContentLoaded', () => {
   cargarProductos();
   renderCart();
 });
+
