@@ -28,7 +28,7 @@ let productos = [];
 let carrito = JSON.parse(localStorage.getItem('amat_carrito_v1') || '[]');
 
 /****************************************************
- * DOM READY
+ * DOM
  ****************************************************/
 document.addEventListener('DOMContentLoaded', () => {
   const catalogoEl = document.getElementById('catalogo');
@@ -42,20 +42,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const submitBtn = document.getElementById('submit-order');
 
   /****************************************************
-   * CARGAR PRODUCTOS DESDE GOOGLE SHEETS
+   * CARGAR PRODUCTOS
    ****************************************************/
   async function cargarProductos() {
     try {
       const res = await fetch(SHEET_URL);
       const data = await res.json();
 
-      productos = data.map((row, index) => ({
-        id: row.id || index + 1,
+      productos = data.map(row => ({
+        id: Number(row.id),
         nombre: row.nombre,
-        color: row.color || '',
         precio: Number(row.precio),
         precioMayoreo: Number(row.precio_mayoreo),
         minMayoreo: Number(row.minimo_mayoreo),
+        colores: row.colores.split(',').map(c => c.trim()),
         imagen: row.imagen
       }));
 
@@ -67,32 +67,31 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /****************************************************
-   * RENDER DEL CATÁLOGO
+   * RENDER CATÁLOGO
    ****************************************************/
   function renderProductos() {
     catalogoEl.innerHTML = '';
 
     productos.forEach((p, i) => {
+      const opcionesColores = p.colores
+        .map(c => `<option value="${c}">${c}</option>`)
+        .join('');
+
       const card = document.createElement('article');
       card.className = 'card';
-
-      const ahorro =
-        p.minMayoreo > 0
-          ? `Ahorra $${(p.precio - p.precioMayoreo).toFixed(2)} MXN desde ${p.minMayoreo} pzas`
-          : '';
-
       card.innerHTML = `
         <img src="${p.imagen}" alt="${p.nombre}">
         <h3>${p.nombre}</h3>
-        ${p.color ? `<div style="font-size:13px;color:#6b7280">${p.color}</div>` : ''}
         <div class="price">$${p.precio} MXN</div>
-        ${
-          p.precioMayoreo
-            ? `<div style="font-size:13px;color:#16a34a;margin-bottom:8px">
-                Mayoreo: $${p.precioMayoreo} MXN · ${ahorro}
-               </div>`
-            : ''
-        }
+
+        <select class="color-select" data-index="${i}">
+          ${opcionesColores}
+        </select>
+
+        <div style="font-size:13px;color:#16a34a;margin:8px 0">
+          Mayoreo: $${p.precioMayoreo} desde ${p.minMayoreo} pzas
+        </div>
+
         <button class="btn" data-index="${i}">Agregar al carrito</button>
       `;
 
@@ -101,16 +100,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /****************************************************
-   * UTILIDADES CARRITO
+   * CARRITO
    ****************************************************/
   function saveCart() {
     localStorage.setItem('amat_carrito_v1', JSON.stringify(carrito));
   }
 
   function updateBadge() {
-    const cantidad = carrito.reduce((s, i) => s + i.cantidad, 0);
-    cartBadge.style.display = cantidad > 0 ? 'flex' : 'none';
-    cartBadge.textContent = cantidad;
+    const totalItems = carrito.reduce((s, i) => s + i.cantidad, 0);
+    cartBadge.style.display = totalItems > 0 ? 'flex' : 'none';
+    cartBadge.textContent = totalItems;
   }
 
   function renderCart() {
@@ -134,63 +133,66 @@ document.addEventListener('DOMContentLoaded', () => {
 
       total += precioUnit * item.cantidad;
 
-      const node = document.createElement('div');
-      node.className = 'cart-item';
-
-      node.innerHTML = `
+      const div = document.createElement('div');
+      div.className = 'cart-item';
+      div.innerHTML = `
         <img src="${item.imagen}">
         <div class="meta">
-          <b>${item.nombre}</b>
-          ${item.color ? `<div style="font-size:12px">${item.color}</div>` : ''}
+          <b>${item.nombre} (${item.color})</b>
           <div style="font-size:13px;color:#6b7280">
             $${precioUnit} MXN c/u
           </div>
         </div>
         <div>
-          <input class="qty" type="number" min="1"
-            value="${item.cantidad}" data-index="${index}">
+          <input class="qty" type="number" min="1" value="${item.cantidad}" data-index="${index}">
           <button class="small-btn" data-remove="${index}">Eliminar</button>
         </div>
       `;
-
-      cartBody.appendChild(node);
+      cartBody.appendChild(div);
     });
 
-    cartTotalEl.textContent = total.toFixed(2);
+    cartTotalEl.textContent = total;
     updateBadge();
   }
 
   /****************************************************
-   * EVENTOS CATÁLOGO
+   * AGREGAR AL CARRITO
    ****************************************************/
   catalogoEl.addEventListener('click', e => {
     const btn = e.target.closest('button[data-index]');
     if (!btn) return;
 
     const idx = Number(btn.dataset.index);
-    const p = productos[idx];
+    const producto = productos[idx];
+    const selectColor = document.querySelector(`select[data-index="${idx}"]`);
+    const colorSeleccionado = selectColor.value;
 
-    const existing = carrito.find(
-      x => x.id === p.id && x.color === p.color
+    const existente = carrito.find(
+      i => i.id === producto.id && i.color === colorSeleccionado
     );
 
-    if (existing) {
-      existing.cantidad++;
+    if (existente) {
+      existente.cantidad++;
     } else {
-      carrito.push({ ...p, cantidad: 1 });
+      carrito.push({
+        ...producto,
+        color: colorSeleccionado,
+        cantidad: 1
+      });
     }
 
     saveCart();
     renderCart();
   });
 
+  /****************************************************
+   * EVENTOS CARRITO
+   ****************************************************/
   cartBody.addEventListener('change', e => {
-    const input = e.target.closest('input.qty');
+    const input = e.target.closest('.qty');
     if (!input) return;
 
-    const idx = Number(input.dataset.index);
-    carrito[idx].cantidad = parseInt(input.value) || 1;
-
+    carrito[input.dataset.index].cantidad = parseInt(input.value) || 1;
     saveCart();
     renderCart();
   });
@@ -199,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const rm = e.target.closest('button[data-remove]');
     if (!rm) return;
 
-    carrito.splice(Number(rm.dataset.remove), 1);
+    carrito.splice(rm.dataset.remove, 1);
     saveCart();
     renderCart();
   });
@@ -211,6 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cartPanel.classList.add('open');
     overlay.classList.add('show');
   }
+
   function closeCartPanel() {
     cartPanel.classList.remove('open');
     overlay.classList.remove('show');
@@ -223,51 +226,47 @@ document.addEventListener('DOMContentLoaded', () => {
   overlay.addEventListener('click', closeCartPanel);
 
   /****************************************************
-   * ENVIAR PEDIDO (GOOGLE FORMS)
+   * ENVIAR PEDIDO
    ****************************************************/
   submitBtn.addEventListener('click', () => {
-    if (carrito.length === 0) return alert('El carrito está vacío');
+    if (carrito.length === 0) return alert('Carrito vacío');
 
-    const nombre = document.getElementById('nombre').value.trim();
-    const telefono = document.getElementById('telefono').value.trim();
-    const direccion = document.getElementById('direccion').value.trim();
-    const email = document.getElementById('email').value.trim();
+    const nombre = nombreInput.value.trim();
+    const telefono = telefonoInput.value.trim();
+    const direccion = direccionInput.value.trim();
+    const email = emailInput.value.trim();
 
     if (!nombre || !telefono || !direccion || !email)
       return alert('Completa tus datos');
 
-    const pedidoTexto = carrito
-      .map(
-        i =>
-          `${i.nombre} ${i.color ? '(' + i.color + ')' : ''} x${i.cantidad}`
-      )
+    const pedido = carrito
+      .map(i => `${i.nombre} (${i.color}) x${i.cantidad}`)
       .join('\n');
-
-    const total = cartTotalEl.textContent;
 
     const fd = new FormData();
     fd.append(ENTRY.nombre, nombre);
     fd.append(ENTRY.telefono, telefono);
     fd.append(ENTRY.direccion, direccion);
     fd.append(ENTRY.email, email);
-    fd.append(ENTRY.pedido, pedidoTexto);
-    fd.append(ENTRY.total, total);
+    fd.append(ENTRY.pedido, pedido);
+    fd.append(ENTRY.total, cartTotalEl.textContent);
 
     fetch(FORM_URL, { method: 'POST', body: fd, mode: 'no-cors' })
       .then(() => {
-        alert('Pedido enviado con éxito');
+        alert('Pedido enviado');
         carrito = [];
         saveCart();
         renderCart();
         closeCartPanel();
-      })
-      .catch(() => alert('Error al enviar pedido'));
+      });
   });
 
   /****************************************************
-   * INICIALIZAR
+   * INIT
    ****************************************************/
   cargarProductos();
   renderCart();
 });
+
+
 
