@@ -76,43 +76,46 @@ document.addEventListener('DOMContentLoaded', () => {
   /****************************************************
    * RENDER CATÁLOGO
    ****************************************************/
-  function renderProductos() {
-    catalogoEl.innerHTML = '';
+function renderProductos() {
+  catalogoEl.innerHTML = '';
 
-    productos.forEach((p, i) => {
-      const card = document.createElement('article');
-      card.className = 'card';
+  productos.forEach((p, i) => {
+    const card = document.createElement('article');
+    card.className = 'card';
 
-      const colorSelect =
-        p.colores.length > 1
-          ? `
-          <select class="color-select" data-index="${i}">
-            ${p.colores
-              .map(color => `<option value="${color}">${color}</option>`)
-              .join('')}
-          </select>
-        `
-          : `<div style="font-size:13px;color:#6b7280;margin-bottom:6px">
-              Color: ${p.colores[0]}
-            </div>`;
-
-      card.innerHTML = `
-        <img src="${p.imagen}" alt="${p.nombre}">
-        <h3>${p.nombre}</h3>
-        <div class="price">$${p.precio} MXN</div>
-
-        <div style="font-size:13px;color:#16a34a;margin-bottom:8px">
-          Mayoreo: $${p.precioMayoreo} desde ${p.minMayoreo} pzas
-        </div>
-
-        ${colorSelect}
-
-        <button class="btn" data-index="${i}">Agregar al carrito</button>
+    // Mostrar selector SOLO si hay más de un color
+    let colorHTML = '';
+    if (p.colores.length > 1) {
+      colorHTML = `
+        <select class="color-select" data-index="${i}">
+          ${p.colores
+            .map(color => `<option value="${color}">${color}</option>`)
+            .join('')}
+        </select>
       `;
+    }
 
-      catalogoEl.appendChild(card);
-    });
-  }
+    card.innerHTML = `
+      <img src="${p.imagen}" alt="${p.nombre}">
+      <h3>${p.nombre}</h3>
+
+      <div class="price">$${p.precio.toFixed(2)} MXN</div>
+
+      <div style="font-size:13px;color:#16a34a;margin-bottom:8px">
+        Mayoreo: $${p.precioMayoreo.toFixed(2)} desde ${p.minMayoreo} pzas
+      </div>
+
+      ${colorHTML}
+
+      <button class="btn" data-index="${i}">
+        Agregar al carrito
+      </button>
+    `;
+
+    catalogoEl.appendChild(card);
+  });
+}
+
 
   /****************************************************
    * CARRITO
@@ -294,4 +297,5 @@ document.addEventListener('DOMContentLoaded', () => {
   cargarProductos();
   renderCart();
 });
+
 
