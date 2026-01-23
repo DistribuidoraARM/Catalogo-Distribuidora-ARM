@@ -2,71 +2,86 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Catálogo Distribuidora X</title>
+
+  <!-- CSS -->
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-<header>
-  <h1>Distribuidora X — Catálogo</h1>
-</header>
+  <!-- HEADER -->
+  <header>
+    <h1>Distribuidora X — Catálogo</h1>
+  </header>
 
-<!-- 🔍 BUSCADOR -->
-<div class="search-box">
-  <input
-    type="text"
-    id="search-input"
-    placeholder="Buscar producto..."
-  />
-</div>
-
-<!-- 🏷️ CATEGORÍAS -->
-<div class="filters">
-  <button class="filter-btn active" data-filter="Todos">Todos</button>
-  <button class="filter-btn" data-filter="Papelería">Papelería</button>
-  <button class="filter-btn" data-filter="Escolar">Escolar</button>
-  <button class="filter-btn" data-filter="Oficina">Oficina</button>
-</div>
-
-<div class="promo-bar">
-  🚚 ¡ENVÍO GRATIS AL MAYOREO! A partir de $3,000MXN!
-</div>
-
-<div class="container">
-  <div class="grid" id="catalogo"></div>
-</div>
-
-<!-- 🛒 CARRITO -->
-<div id="cart-btn">
-  🛒 <span id="cart-badge" style="display:none">0</span>
-</div>
-
-<div class="overlay" id="overlay"></div>
-
-<aside class="cart-panel" id="cart-panel">
-  <div class="cart-header">
-    <strong>Tu carrito</strong>
-    <button id="close-cart">✕</button>
+  <!-- BUSCADOR -->
+  <div class="search-bar">
+    <input
+      type="text"
+      id="search-input"
+      placeholder="Buscar producto..."
+      aria-label="Buscar producto"
+    />
   </div>
 
-  <div class="cart-body" id="cart-body"></div>
+  <!-- FILTROS (SE LLENAN AUTOMÁTICAMENTE DESDE JS) -->
+  <div class="filters"></div>
 
-  <div class="cart-footer">
-    <div>Total: $<span id="cart-total">0.00</span> MXN</div>
-
-    <input id="nombre" placeholder="Nombre" />
-    <input id="telefono" placeholder="Teléfono" />
-    <input id="direccion" placeholder="Dirección" />
-    <input id="email" placeholder="Email" />
-
-    <button id="submit-order">Finalizar pedido</button>
+  <!-- PROMO -->
+  <div class="promo-bar">
+    🚚 ¡ENVÍO GRATIS AL MAYOREO! A partir de $3,000 MXN!
   </div>
-</aside>
 
-<script src="script.js"></script>
+  <!-- CATÁLOGO -->
+  <main class="container">
+    <div class="grid" id="catalogo"></div>
+  </main>
+
+  <!-- BOTÓN CARRITO -->
+  <div id="cart-btn" aria-label="Abrir carrito" title="Abrir carrito">
+    <span id="cart-emoji">🛒</span>
+    <div id="cart-badge" style="display:none">0</div>
+  </div>
+
+  <!-- OVERLAY -->
+  <div class="overlay" id="overlay"></div>
+
+  <!-- PANEL CARRITO -->
+  <aside class="cart-panel" id="cart-panel" aria-hidden="true">
+    <div class="cart-header">
+      <strong>Tu carrito</strong>
+      <button id="close-cart" class="small-btn">✕</button>
+    </div>
+
+    <div class="cart-body" id="cart-body"></div>
+
+    <div class="cart-footer">
+      <div>
+        Total: <strong>$<span id="cart-total">0.00</span> MXN</strong>
+      </div>
+
+      <div class="checkout-form">
+        <input id="nombre" type="text" placeholder="Nombre" required />
+        <input id="telefono" type="text" placeholder="Teléfono" required />
+        <input id="direccion" type="text" placeholder="Dirección" required />
+        <input id="email" type="email" placeholder="Email" required />
+        <button id="submit-order" class="checkout-btn">
+          Finalizar pedido
+        </button>
+      </div>
+
+      <div style="font-size:12px;margin-top:8px;">
+        Tu pedido quedará registrado.
+      </div>
+    </div>
+  </aside>
+
+  <!-- JS -->
+  <script src="script.js"></script>
 </body>
 </html>
+
 
 
 
