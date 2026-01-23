@@ -42,20 +42,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const submitBtn = document.getElementById('submit-order');
 
   const searchInput = document.getElementById('search');
+  const categoryButtons = document.querySelectorAll('.filter-btn');
 
-if (searchInput) {
-  searchInput.addEventListener('input', e => {
-    const texto = e.target.value.toLowerCase();
-
-    const filtrados = productos.filter(p =>
-      p.nombre.toLowerCase().includes(texto)
-    );
-
-    catalogoEl.innerHTML = '';
-    filtrados.forEach((p, i) => renderProductos());
-  });
-}
-
+  let activeCategory = 'todos'; // valor por defecto (coincide con data-filter "Todos")
+  let lastSearch = '';
 
   /****************************************************
    * CARGAR PRODUCTOS
@@ -67,18 +57,21 @@ if (searchInput) {
       const data = await res.json();
 
       productos = data.map(row => ({
-        id: Number(row.id),
+        id: String(row.id || Math.random().toString(36).slice(2, 9)), // asegurar id único como string
         nombre: row.nombre || '',
+        descripcion: row.descripcion || '',
         precio: Number(row.precio) || 0,
         precioMayoreo: Number(row.precio_mayoreo) || 0,
         minMayoreo: Number(row.minimo_mayoreo) || 0,
+        categoria: (row.categoria || 'Otros').trim(),
         colores: row.colores
           ? row.colores.split(',').map(c => c.trim())
           : ['Único'],
         imagen: row.imagen || ''
       }));
 
-      renderProductos();
+      // Mostrar inicialmente aplicando filtros (vacío + todos)
+      applyFilters();
     } catch (err) {
       console.error(err);
       alert('No se pudieron cargar los productos');
@@ -86,38 +79,100 @@ if (searchInput) {
   }
 
   /****************************************************
-   * RENDER CATÁLOGO
+   * RENDER CATÁLOGO (acepta lista opcional)
    ****************************************************/
-  function renderProductos() {
+  function renderProductos(lista = productos) {
+    if (!catalogoEl) return;
     catalogoEl.innerHTML = '';
 
-    productos.forEach((p, i) => {
+    if (!lista || lista.length === 0) {
+      catalogoEl.innerHTML = '<div style="padding:18px;color:#6b7280">No hay productos</div>';
+      return;
+    }
+
+    lista.forEach(p => {
       const card = document.createElement('article');
       card.className = 'card';
 
       let colorHTML = '';
-      if (p.colores.length > 1) {
+      if (p.colores && p.colores.length > 1) {
         colorHTML = `
-          <select class="color-select" data-index="${i}">
-            ${p.colores
-              .map(c => `<option value="${c}">${c}</option>`)
-              .join('')}
+          <select class="color-select" data-id="${p.id}">
+            ${p.colores.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')}
           </select>
         `;
       }
 
       card.innerHTML = `
-        <img src="${p.imagen}" alt="${p.nombre}">
-        <h3>${p.nombre}</h3>
-        <div class="price">$${p.precio.toFixed(2)} MXN</div>
+        <img src="${escapeHtml(p.imagen)}" alt="${escapeHtml(p.nombre)}">
+        <h3>${escapeHtml(p.nombre)}</h3>
+        <div class="price">$${Number(p.precio).toFixed(2)} MXN</div>
         <div style="font-size:13px;color:#16a34a;margin-bottom:8px">
-          Mayoreo: $${p.precioMayoreo.toFixed(2)} desde ${p.minMayoreo} pzas
+          Mayoreo: $${Number(p.precioMayoreo).toFixed(2)} desde ${p.minMayoreo} pzas
         </div>
         ${colorHTML}
-        <button class="btn" data-index="${i}">Agregar al carrito</button>
+        <button class="btn" data-id="${p.id}">Agregar al carrito</button>
       `;
 
       catalogoEl.appendChild(card);
+    });
+  }
+
+  // pequeña función para escapar texto en templates
+  function escapeHtml(str) {
+    if (!str && str !== 0) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  /****************************************************
+   * FILTRADO (búsqueda + categoría)
+   ****************************************************/
+  function applyFilters() {
+    const q = (lastSearch || '').trim().toLowerCase();
+
+    const filtrados = productos.filter(p => {
+      const nombre = (p.nombre || '').toLowerCase();
+      const descripcion = (p.descripcion || '').toLowerCase();
+      const categoria = (p.categoria || '').toLowerCase();
+
+      const textMatch = q === '' || nombre.includes(q) || descripcion.includes(q);
+      const catMatch = activeCategory === 'todos' || categoria === activeCategory;
+
+      return textMatch && catMatch;
+    });
+
+    renderProductos(filtrados);
+  }
+
+  /****************************************************
+   * BUSCADOR
+   ****************************************************/
+  if (searchInput) {
+    searchInput.addEventListener('input', e => {
+      lastSearch = e.target.value || '';
+      applyFilters();
+    });
+  }
+
+  /****************************************************
+   * BOTONES DE CATEGORÍA
+   ****************************************************/
+  if (categoryButtons && categoryButtons.length) {
+    categoryButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        // actualizar estado visual
+        categoryButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // normalizar valor a minúsculas para comparar
+        activeCategory = (btn.dataset.filter || 'Todos').toString().trim().toLowerCase();
+        applyFilters();
+      });
     });
   }
 
@@ -129,12 +184,14 @@ if (searchInput) {
   }
 
   function updateBadge() {
-    const cantidad = carrito.reduce((s, i) => s + i.cantidad, 0);
+    const cantidad = carrito.reduce((s, i) => s + (i.cantidad || 0), 0);
+    if (!cartBadge) return;
     cartBadge.style.display = cantidad > 0 ? 'flex' : 'none';
     cartBadge.textContent = cantidad;
   }
 
   function renderCart() {
+    if (!cartBody || !cartTotalEl) return;
     cartBody.innerHTML = '';
 
     if (carrito.length === 0) {
@@ -159,11 +216,11 @@ if (searchInput) {
       node.className = 'cart-item';
 
       node.innerHTML = `
-        <img src="${item.imagen}">
+        <img src="${escapeHtml(item.imagen)}">
         <div class="meta">
-          <b>${item.nombre} (${item.color})</b>
+          <b>${escapeHtml(item.nombre)} (${escapeHtml(item.color)})</b>
           <div style="font-size:13px;color:#6b7280">
-            $${precioUnit} MXN c/u
+            $${Number(precioUnit).toFixed(2)} MXN c/u
           </div>
         </div>
         <div>
@@ -180,127 +237,132 @@ if (searchInput) {
   }
 
   /****************************************************
-   * EVENTOS CATÁLOGO
+   * EVENTOS CATÁLOGO (agregar al carrito)
    ****************************************************/
-  catalogoEl.addEventListener('click', e => {
-    const btn = e.target.closest('button[data-index]');
-    if (!btn) return;
+  if (catalogoEl) {
+    catalogoEl.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-id]');
+      if (!btn) return;
 
-    const idx = Number(btn.dataset.index);
-    const p = productos[idx];
+      const id = String(btn.dataset.id);
+      const p = productos.find(x => String(x.id) === id);
+      if (!p) return;
 
-    const select = document.querySelector(
-      `.color-select[data-index="${idx}"]`
-    );
-    const color = select ? select.value : p.colores[0];
+      const select = document.querySelector(`.color-select[data-id="${id}"]`);
+      const color = select ? select.value : (p.colores && p.colores[0]) || 'Único';
 
-    const existing = carrito.find(
-      x => x.id === p.id && x.color === color
-    );
+      const existing = carrito.find(x => String(x.id) === String(p.id) && x.color === color);
 
-    if (existing) existing.cantidad++;
-    else carrito.push({ ...p, color, cantidad: 1 });
+      if (existing) existing.cantidad = (existing.cantidad || 0) + 1;
+      else carrito.push({ ...p, color, cantidad: 1 });
 
-    saveCart();
-    renderCart();
-  });
+      saveCart();
+      renderCart();
+    });
+  }
 
-  cartBody.addEventListener('change', e => {
-    const input = e.target.closest('input.qty');
-    if (!input) return;
+  // cambiar cantidad en carrito
+  if (cartBody) {
+    cartBody.addEventListener('change', e => {
+      const input = e.target.closest('input.qty');
+      if (!input) return;
 
-    carrito[Number(input.dataset.index)].cantidad =
-      parseInt(input.value) || 1;
+      const idx = Number(input.dataset.index);
+      carrito[idx].cantidad = parseInt(input.value, 10) || 1;
 
-    saveCart();
-    renderCart();
-  });
+      saveCart();
+      renderCart();
+    });
 
-  cartBody.addEventListener('click', e => {
-    const rm = e.target.closest('button[data-remove]');
-    if (!rm) return;
+    cartBody.addEventListener('click', e => {
+      const rm = e.target.closest('button[data-remove]');
+      if (!rm) return;
 
-    carrito.splice(Number(rm.dataset.remove), 1);
-    saveCart();
-    renderCart();
-  });
+      carrito.splice(Number(rm.dataset.remove), 1);
+      saveCart();
+      renderCart();
+    });
+  }
 
   /****************************************************
    * ABRIR / CERRAR CARRITO
    ****************************************************/
   function openCart() {
+    if (!cartPanel || !overlay) return;
     cartPanel.classList.add('open');
     overlay.classList.add('show');
   }
 
   function closeCartPanel() {
+    if (!cartPanel || !overlay) return;
     cartPanel.classList.remove('open');
     overlay.classList.remove('show');
   }
 
-  cartBtn.addEventListener('click', () =>
-    cartPanel.classList.contains('open')
-      ? closeCartPanel()
-      : openCart()
-  );
-
-  closeCart.addEventListener('click', closeCartPanel);
-  overlay.addEventListener('click', closeCartPanel);
+  if (cartBtn) {
+    cartBtn.addEventListener('click', () =>
+      cartPanel.classList.contains('open') ? closeCartPanel() : openCart()
+    );
+  }
+  if (closeCart) closeCart.addEventListener('click', closeCartPanel);
+  if (overlay) overlay.addEventListener('click', closeCartPanel);
 
   /****************************************************
    * ENVIAR PEDIDO
    ****************************************************/
-  submitBtn.addEventListener('click', () => {
-    if (carrito.length === 0)
-      return alert('El carrito está vacío');
+  if (submitBtn) {
+    submitBtn.addEventListener('click', () => {
+      if (carrito.length === 0) return alert('El carrito está vacío');
 
-    const nombre = document.getElementById('nombre').value.trim();
-    const telefono = document.getElementById('telefono').value.trim();
-    const direccion = document.getElementById('direccion').value.trim();
-    const email = document.getElementById('email').value.trim();
+      const nombre = document.getElementById('nombre').value.trim();
+      const telefono = document.getElementById('telefono').value.trim();
+      const direccion = document.getElementById('direccion').value.trim();
+      const email = document.getElementById('email').value.trim();
 
-    if (!nombre || !telefono || !direccion || !email)
-      return alert('Completa tus datos');
+      if (!nombre || !telefono || !direccion || !email)
+        return alert('Completa tus datos');
 
-    const pedidoTexto = carrito
-      .map(
-        i =>
-          `${i.nombre} (${i.color}) x${i.cantidad} = $${
-            (i.cantidad >= i.minMayoreo
-              ? i.precioMayoreo
-              : i.precio) * i.cantidad
-          }`
-      )
-      .join('\n');
+      const pedidoTexto = carrito
+        .map(
+          i =>
+            `${i.nombre} (${i.color}) x${i.cantidad} = $${(
+              (i.cantidad >= i.minMayoreo ? i.precioMayoreo : i.precio) *
+              i.cantidad
+            ).toFixed(2)}`
+        )
+        .join('\n');
 
-    const fd = new FormData();
-    fd.append(ENTRY.nombre, nombre);
-    fd.append(ENTRY.telefono, telefono);
-    fd.append(ENTRY.direccion, direccion);
-    fd.append(ENTRY.email, email);
-    fd.append(ENTRY.pedido, pedidoTexto);
-    fd.append(ENTRY.total, cartTotalEl.textContent);
+      const fd = new FormData();
+      fd.append(ENTRY.nombre, nombre);
+      fd.append(ENTRY.telefono, telefono);
+      fd.append(ENTRY.direccion, direccion);
+      fd.append(ENTRY.email, email);
+      fd.append(ENTRY.pedido, pedidoTexto);
+      fd.append(ENTRY.total, cartTotalEl.textContent);
 
-    fetch(FORM_URL, {
-      method: 'POST',
-      body: fd,
-      mode: 'no-cors'
-    })
-      .then(() => {
-        alert('Pedido enviado con éxito');
-        carrito = [];
-        saveCart();
-        renderCart();
-        closeCartPanel();
+      fetch(FORM_URL, {
+        method: 'POST',
+        body: fd,
+        mode: 'no-cors'
       })
-      .catch(() => alert('Error al enviar pedido'));
-  });
+        .then(() => {
+          alert('Pedido enviado con éxito');
+          carrito = [];
+          saveCart();
+          renderCart();
+          closeCartPanel();
+        })
+        .catch(() => alert('Error al enviar pedido'));
+    });
+  }
 
   /****************************************************
    * INIT
    ****************************************************/
-  cargarProductos();
+  // render del carrito guardado
   renderCart();
+  // cargar productos desde Google Sheet
+  cargarProductos();
 });
 
 
