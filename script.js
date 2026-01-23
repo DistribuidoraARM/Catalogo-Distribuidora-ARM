@@ -41,6 +41,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeCart = document.getElementById('close-cart');
   const submitBtn = document.getElementById('submit-order');
 
+  const searchInput = document.getElementById('search');
+
+if (searchInput) {
+  searchInput.addEventListener('input', e => {
+    const texto = e.target.value.toLowerCase();
+
+    const filtrados = productos.filter(p =>
+      p.nombre.toLowerCase().includes(texto)
+    );
+
+    catalogoEl.innerHTML = '';
+    filtrados.forEach((p, i) => renderProductos());
+  });
+}
+
+
   /****************************************************
    * CARGAR PRODUCTOS
    ****************************************************/
@@ -286,4 +302,5 @@ document.addEventListener('DOMContentLoaded', () => {
   cargarProductos();
   renderCart();
 });
+
 
