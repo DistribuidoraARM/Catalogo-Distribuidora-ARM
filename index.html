@@ -1,60 +1,73 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Catálogo Distribuidora X</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
 <header>
-  <h1>Distribuidora X</h1>
+  <h1>Distribuidora X — Catálogo</h1>
 </header>
 
-<!-- BUSCADOR -->
-<div class="search-wrapper">
-  <input
-    type="text"
-    id="search"
-    placeholder="Buscar producto..."
-  />
+<!-- CATEGORÍAS (FIJAS, COMO YA LAS TENÍAS) -->
+<div class="filters">
+  <button class="filter-btn active" data-filter="Todos">Todos</button>
+  <button class="filter-btn" data-filter="Papelería">Papelería</button>
+  <button class="filter-btn" data-filter="Escolar">Escolar</button>
+  <button class="filter-btn" data-filter="Oficina">Oficina</button>
 </div>
 
-<!-- CATEGORÍAS AUTOMÁTICAS -->
-<div class="filters"></div>
+<!-- BANNER PROMO -->
+<div class="promo-bar">
+  🚚 ¡ENVÍO GRATIS AL MAYOREO! A partir de 10 piezas
+</div>
 
 <!-- CATÁLOGO -->
 <div class="container">
   <div class="grid" id="catalogo"></div>
 </div>
 
-<!-- BOTÓN CARRITO -->
-<div id="cart-btn">
-  🛒
-  <span id="cart-badge">0</span>
+<!-- BOTÓN CARRITO FLOTANTE -->
+<div id="cart-btn" aria-label="Abrir carrito" title="Abrir carrito">
+  <span id="cart-emoji">🛒</span>
+  <div id="cart-badge" style="display:none">0</div>
 </div>
 
+<!-- OVERLAY -->
 <div class="overlay" id="overlay"></div>
 
 <!-- PANEL CARRITO -->
-<aside class="cart-panel" id="cart-panel">
+<aside class="cart-panel" id="cart-panel" aria-hidden="true">
   <div class="cart-header">
     <strong>Tu carrito</strong>
-    <button id="close-cart">✕</button>
+    <button id="close-cart" class="small-btn">✕</button>
   </div>
 
-  <div id="cart-body"></div>
+  <div class="cart-body" id="cart-body"></div>
 
   <div class="cart-footer">
-    <div>Total: <strong>$<span id="cart-total">0.00</span></strong></div>
+    <div>
+      Total:
+      <strong>$<span id="cart-total">0</span> MXN</strong>
+    </div>
 
-    <input id="nombre" placeholder="Nombre" />
-    <input id="telefono" placeholder="Teléfono" />
-    <input id="direccion" placeholder="Dirección" />
-    <input id="email" placeholder="Email" />
+    <div class="checkout-form">
+      <input id="nombre" type="text" placeholder="Nombre" required />
+      <input id="telefono" type="text" placeholder="Teléfono" required />
+      <input id="direccion" type="text" placeholder="Dirección" required />
+      <input id="email" type="email" placeholder="Email" required />
 
-    <button id="submit-order">Finalizar pedido</button>
+      <button id="submit-order" class="checkout-btn">
+        Finalizar pedido
+      </button>
+    </div>
+
+    <div style="font-size:12px;margin-top:8px;">
+      Tu pedido quedará registrado.
+    </div>
   </div>
 </aside>
 
