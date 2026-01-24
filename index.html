@@ -11,13 +11,22 @@
 <header>
   <h1>Distribuidora X — Catálogo</h1>
 </header>
-  <div class="search-bar">
-  <input
-    type="text"
-    id="search"
-    placeholder="Buscar producto..."
-  />
+ <div class="search-bar">
+  <label for="search" class="visually-hidden">Buscar producto</label>
+  <div class="search-input-wrap">
+    <span class="search-icon" aria-hidden="true">🔍</span>
+    <input
+      id="search"
+      type="search"
+      inputmode="search"
+      placeholder="Buscar producto, categoría o SKU..."
+      aria-label="Buscar producto"
+      autocomplete="off"
+    />
+    <button id="clear-search" class="clear-btn" aria-label="Limpiar búsqueda" title="Limpiar búsqueda" hidden>✕</button>
+  </div>
 </div>
+
 
 
 <!-- CATEGORÍAS -->
@@ -82,6 +91,7 @@
 <script src="script.js"></script>
 </body>
 </html>
+
 
 
 
