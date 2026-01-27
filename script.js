@@ -69,7 +69,9 @@ document.addEventListener('DOMContentLoaded', () => {
         colores: row.colores
           ? row.colores.split(',').map(c => c.trim()).filter(Boolean)
           : [],
-        imagen: row.imagen || ''
+        imagenes: row.imagen
+        ? row.imagen.split(',').map(url => url.trim()).filter(Boolean) 
+          : []
       }));
 
       applyFilters();
@@ -95,43 +97,63 @@ document.addEventListener('DOMContentLoaded', () => {
   /****************************************************
    * RENDER CATÁLOGO (acepta lista opcional)
    ****************************************************/
-  function renderProductos(lista = productos) {
-    if (!catalogoEl) return;
-    catalogoEl.innerHTML = '';
+ function renderProductos(lista = productos) {
+  if (!catalogoEl) return;
+  catalogoEl.innerHTML = '';
 
-    if (!lista || lista.length === 0) {
-      catalogoEl.innerHTML = '<div style="padding:18px;color:#6b7280">No hay productos</div>';
-      return;
+  if (!lista || lista.length === 0) {
+    catalogoEl.innerHTML = '<div style="padding:18px;color:#6b7280">No hay productos</div>';
+    return;
+  }
+
+  lista.forEach(p => {
+    const card = document.createElement('article');
+    card.className = 'card';
+
+    let colorHTML = '';
+    // Mostrar selector solo si hay más de 1 color
+    if (Array.isArray(p.colores) && p.colores.length > 1) {
+      colorHTML = `
+        <select class="color-select" data-id="${escapeHtml(p.id)}">
+          ${p.colores.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')}
+        </select>
+      `;
     }
 
-    lista.forEach(p => {
-      const card = document.createElement('article');
-      card.className = 'card';
-
-      let colorHTML = '';
-      // Mostrar selector solo si hay más de 1 color
-      if (Array.isArray(p.colores) && p.colores.length > 1) {
-        colorHTML = `
-          <select class="color-select" data-id="${escapeHtml(p.id)}">
-            ${p.colores.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')}
-          </select>
-        `;
-      }
-
-      card.innerHTML = `
-        <img src="${escapeHtml(p.imagen)}" alt="${escapeHtml(p.nombre)}">
-        <h3>${escapeHtml(p.nombre)}</h3>
-        <div class="price">$${Number(p.precio).toFixed(2)} MXN</div>
-        <div style="font-size:13px;color:#16a34a;margin-bottom:8px">
-          Mayoreo: $${Number(p.precioMayoreo).toFixed(2)} desde ${p.minMayoreo} pzas
+    // Carrusel: si hay varias imágenes en p.imagenes
+    let imagenHTML = '';
+    if (Array.isArray(p.imagenes) && p.imagenes.length > 1) {
+      const imgs = p.imagenes.map((img, idx) =>
+        `<img src="${escapeHtml(img)}" class="carousel-img ${idx === 0 ? 'active' : ''}" alt="${escapeHtml(p.nombre)}">`
+      ).join('');
+      imagenHTML = `
+        <div class="carousel" data-id="${escapeHtml(p.id)}">
+          <button class="carousel-btn prev" aria-label="Anterior">‹</button>
+          <div class="carousel-track">${imgs}</div>
+          <button class="carousel-btn next" aria-label="Siguiente">›</button>
         </div>
-        ${colorHTML}
-        <button class="btn" data-id="${escapeHtml(p.id)}">Agregar al carrito</button>
       `;
+    } else {
+      // si solo hay una imagen (p.imagen o p.imagenes[0])
+      const imgSrc = p.imagenes && p.imagenes.length ? p.imagenes[0] : p.imagen;
+      imagenHTML = `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(p.nombre)}">`;
+    }
 
-      catalogoEl.appendChild(card);
-    });
-  }
+    card.innerHTML = `
+      ${imagenHTML}
+      <h3>${escapeHtml(p.nombre)}</h3>
+      <div class="price">$${Number(p.precio).toFixed(2)} MXN</div>
+      <div style="font-size:13px;color:#16a34a;margin-bottom:8px">
+        Mayoreo: $${Number(p.precioMayoreo).toFixed(2)} desde ${p.minMayoreo} pzas
+      </div>
+      ${colorHTML}
+      <button class="btn" data-id="${escapeHtml(p.id)}">Agregar al carrito</button>
+    `;
+
+    catalogoEl.appendChild(card);
+  });
+}
+
 
   /****************************************************
    * FILTRADO (búsqueda + categoría)
@@ -372,6 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCart();
   cargarProductos();
 });
+
 
 
 
