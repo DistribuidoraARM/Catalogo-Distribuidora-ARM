@@ -119,6 +119,23 @@ document.addEventListener('DOMContentLoaded', () => {
         </select>
       `;
     }
+    document.addEventListener('click', e => {
+  const prevBtn = e.target.closest('.carousel-btn.prev');
+  const nextBtn = e.target.closest('.carousel-btn.next');
+  if (prevBtn || nextBtn) {
+    const carousel = e.target.closest('.carousel');
+    if (!carousel) return;
+    const imgs = carousel.querySelectorAll('.carousel-img');
+    let current = Array.from(imgs).findIndex(img => img.classList.contains('active'));
+    imgs[current].classList.remove('active');
+    if (prevBtn) {
+      current = (current - 1 + imgs.length) % imgs.length;
+    } else {
+      current = (current + 1) % imgs.length;
+    }
+    imgs[current].classList.add('active');
+  }
+});
 
     // Carrusel: si hay varias imágenes en p.imagenes
     let imagenHTML = '';
@@ -394,6 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCart();
   cargarProductos();
 });
+
 
 
 
