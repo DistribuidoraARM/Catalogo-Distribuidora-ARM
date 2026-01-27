@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
   /****************************************************
    * RENDER CATÁLOGO (acepta lista opcional)
    ****************************************************/
- function renderProductos(lista = productos) {
+function renderProductos(lista = productos) {
   if (!catalogoEl) return;
   catalogoEl.innerHTML = '';
 
@@ -119,7 +119,44 @@ document.addEventListener('DOMContentLoaded', () => {
         </select>
       `;
     }
-    document.addEventListener('click', e => {
+
+    // Carrusel: si hay varias imágenes
+    let imagenHTML = '';
+    if (Array.isArray(p.imagenes) && p.imagenes.length > 1) {
+      const imgs = p.imagenes.map((img, idx) =>
+        `<img src="${escapeHtml(img)}" class="carousel-img ${idx === 0 ? 'active' : ''}" alt="${escapeHtml(p.nombre)}">`
+      ).join('');
+      imagenHTML = `
+        <div class="carousel" data-id="${escapeHtml(p.id)}">
+          <button class="carousel-btn prev" aria-label="Anterior">‹</button>
+          <div class="carousel-track">${imgs}</div>
+          <button class="carousel-btn next" aria-label="Siguiente">›</button>
+        </div>
+      `;
+    } else {
+      const imgSrc = p.imagenes && p.imagenes.length ? p.imagenes[0] : p.imagen;
+      imagenHTML = `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(p.nombre)}">`;
+    }
+
+    card.innerHTML = `
+      ${imagenHTML}
+      <h3>${escapeHtml(p.nombre)}</h3>
+      <div class="price">$${Number(p.precio).toFixed(2)} MXN</div>
+      <div style="font-size:13px;color:#16a34a;margin-bottom:8px">
+        Mayoreo: $${Number(p.precioMayoreo).toFixed(2)} desde ${p.minMayoreo} pzas
+      </div>
+      <div class="card-actions">
+        ${colorHTML}
+        <button class="btn" data-id="${escapeHtml(p.id)}">Agregar al carrito</button>
+      </div>
+    `;
+
+    catalogoEl.appendChild(card);
+  });
+}
+
+// --- Carrusel: manejar flechas ---
+document.addEventListener('click', e => {
   const prevBtn = e.target.closest('.carousel-btn.prev');
   const nextBtn = e.target.closest('.carousel-btn.next');
   if (prevBtn || nextBtn) {
@@ -137,39 +174,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-    // Carrusel: si hay varias imágenes en p.imagenes
-    let imagenHTML = '';
-    if (Array.isArray(p.imagenes) && p.imagenes.length > 1) {
-      const imgs = p.imagenes.map((img, idx) =>
-        `<img src="${escapeHtml(img)}" class="carousel-img ${idx === 0 ? 'active' : ''}" alt="${escapeHtml(p.nombre)}">`
-      ).join('');
-      imagenHTML = `
-        <div class="carousel" data-id="${escapeHtml(p.id)}">
-          <button class="carousel-btn prev" aria-label="Anterior">‹</button>
-          <div class="carousel-track">${imgs}</div>
-          <button class="carousel-btn next" aria-label="Siguiente">›</button>
-        </div>
-      `;
-    } else {
-      // si solo hay una imagen (p.imagen o p.imagenes[0])
-      const imgSrc = p.imagenes && p.imagenes.length ? p.imagenes[0] : p.imagen;
-      imagenHTML = `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(p.nombre)}">`;
-    }
-
-    card.innerHTML = `
-      ${imagenHTML}
-      <h3>${escapeHtml(p.nombre)}</h3>
-      <div class="price">$${Number(p.precio).toFixed(2)} MXN</div>
-      <div style="font-size:13px;color:#16a34a;margin-bottom:8px">
-        Mayoreo: $${Number(p.precioMayoreo).toFixed(2)} desde ${p.minMayoreo} pzas
-      </div>
-      ${colorHTML}
-      <button class="btn" data-id="${escapeHtml(p.id)}">Agregar al carrito</button>
-    `;
-
-    catalogoEl.appendChild(card);
-  });
-}
 
 
   /****************************************************
@@ -411,6 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCart();
   cargarProductos();
 });
+
 
 
 
