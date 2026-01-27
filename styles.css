@@ -346,7 +346,84 @@ button:focus,
   gap: 8px;
   margin-top: 10px;
 }
+/* Contenedor general de la tarjeta */
+.card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* reparte espacio vertical */
+  align-items: center;
+  text-align: center;
+  height: 100%; /* asegura misma altura si usas grid */
+  padding: 12px;
+  box-sizing: border-box;
+}
 
+/* Bloque de imagen/carrusel */
+.card-image,
+.carousel {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Carrusel track */
+.carousel-track {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+/* Imágenes del carrusel */
+.carousel-img {
+  min-width: 100%;
+  height: 200px;
+  object-fit: contain;
+  display: none;
+}
+.carousel-img.active {
+  display: block;
+  margin: 0 auto;
+}
+
+/* Botones del carrusel */
+.carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.4);
+  color: #fff;
+  border: none;
+  font-size: 22px;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 50%;
+}
+.carousel-btn.prev { left: 8px; }
+.carousel-btn.next { right: 8px; }
+.carousel-btn:hover { background: rgba(0,0,0,0.6); }
+
+/* Bloque de información */
+.card-info {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.card-info h3 { margin: 8px 0; }
+.card-info .price { font-weight: bold; margin-bottom: 6px; }
+.card-info .mayoreo { font-size: 13px; color: #16a34a; margin-bottom: 8px; }
+
+/* Bloque de acciones (selector + botón) */
+.card-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto; /* empuja al fondo */
+}
 
 
 
