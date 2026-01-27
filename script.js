@@ -155,7 +155,8 @@ function renderProductos(lista = productos) {
   </div>
 `;
 catalogoEl.appendChild(card);
-    
+    }); 
+}
 // --- Carrusel: manejar flechas ---
 document.addEventListener('click', e => {
   const prevBtn = e.target.closest('.carousel-btn.prev');
@@ -416,6 +417,7 @@ document.addEventListener('click', e => {
   renderCart();
   cargarProductos();
 });
+
 
 
 
