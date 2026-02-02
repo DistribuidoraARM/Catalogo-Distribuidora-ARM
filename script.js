@@ -81,6 +81,7 @@ function renderCategoryButtons() {
       }));
 
       applyFilters();
+      return prodcutos;
     } catch (err) {
       console.error(err);
       alert('No se pudieron cargar los productos');
@@ -428,6 +429,7 @@ renderCart();
 cargarProductos().then(() => {
   renderCategoryButtons(); // genera los botones de categoría dinámicamente
 });
+
 
 
 
