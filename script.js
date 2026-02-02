@@ -1,4 +1,5 @@
-
+/****************************************************
+ * VARIABLES
  ****************************************************/
 let productos = [];
 let carrito = JSON.parse(localStorage.getItem('amat_carrito_v1') || '[]');
@@ -18,43 +19,43 @@ document.addEventListener('DOMContentLoaded', () => {
   const submitBtn = document.getElementById('submit-order');
 
   const searchInput = document.getElementById('search');
-  const categoryButtons = document.querySelectorAll('.filter-btn');
 
   let activeCategory = 'todos';
   let lastSearch = '';
-/****************************************************
- * BOTONES DE CATEGORÍA AUTOMÁTICOS
- ****************************************************/
-function renderCategoryButtons() {
-  console.log("Renderizando categorías…", productos.map(p => p.categoria));
-  const container = document.getElementById('category-buttons');
-  if (!container) return;
 
-  // Sacar categorías únicas desde productos
-  const categorias = [...new Set(productos.map(p => p.categoria.toLowerCase()))];
+  /****************************************************
+   * CATEGORÍAS AUTOMÁTICAS
+   ****************************************************/
+  function renderCategoryButtons() {
+    const container = document.getElementById('category-buttons');
+    if (!container) return;
 
-  // Siempre incluir "todos"
-  container.innerHTML = `<button class="filter-btn active" data-filter="todos">Todos</button>`;
+    const categorias = [
+      'todos',
+      ...new Set(productos.map(p => (p.categoria || 'otros').toLowerCase()))
+    ];
 
-  categorias.forEach(cat => {
-    container.innerHTML += `<button class="filter-btn" data-filter="${cat}">${cat}</button>`;
-  });
+    container.innerHTML = '';
 
-  // Reasignar eventos
-  const categoryButtons = container.querySelectorAll('.filter-btn');
-  categoryButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      categoryButtons.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      activeCategory = (btn.dataset.filter || 'todos')
-        .toString()
-        .trim()
-        .toLowerCase();
-      applyFilters();
+    categorias.forEach((cat, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'filter-btn';
+      if (i === 0) btn.classList.add('active');
+      btn.dataset.filter = cat;
+      btn.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+
+      btn.addEventListener('click', () => {
+        container.querySelectorAll('.filter-btn')
+          .forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeCategory = cat;
+        applyFilters();
+      });
+
+      container.appendChild(btn);
     });
-  });
-}
-  
+  }
+
   /****************************************************
    * CARGAR PRODUCTOS
    ****************************************************/
@@ -65,24 +66,21 @@ function renderCategoryButtons() {
       const data = await res.json();
 
       productos = data.map(row => ({
-        id: String(row.id || Math.random().toString(36).slice(2, 9)),
+        id: String(row.id || Math.random().toString(36).slice(2)),
         nombre: row.nombre || '',
         descripcion: row.descripcion || '',
         precio: Number(row.precio) || 0,
         precioMayoreo: Number(row.precio_mayoreo) || 0,
         minMayoreo: Number(row.minimo_mayoreo) || 0,
         categoria: (row.categoria || 'Otros').trim(),
-        // Si la celda está vacía => [], si hay 1 color => ['Rojo'], si hay varios => ['Rojo','Azul']
         colores: row.colores
           ? row.colores.split(',').map(c => c.trim()).filter(Boolean)
           : [],
-        imagenes: row.imagen
-        ? row.imagen.split(',').map(url => url.trim()).filter(Boolean) 
-          : []
+        imagen: row.imagen || ''
       }));
 
+      renderCategoryButtons();   // 👈 AQUÍ ERA CLAVE
       applyFilters();
-      return prodcutos;
     } catch (err) {
       console.error(err);
       alert('No se pudieron cargar los productos');
@@ -90,119 +88,19 @@ function renderCategoryButtons() {
   }
 
   /****************************************************
-   * UTILIDADES
-   ****************************************************/
-  function escapeHtml(str) {
-    if (str === null || str === undefined) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
-
-  /****************************************************
-   * RENDER CATÁLOGO (acepta lista opcional)
-   ****************************************************/
-/****************************************************
- * RENDER CATÁLOGO (acepta lista opcional)
- ****************************************************/
-function renderProductos(lista = productos) {
-  if (!catalogoEl) return;
-  catalogoEl.innerHTML = '';
-
-  if (!lista || lista.length === 0) {
-    catalogoEl.innerHTML = '<div style="padding:18px;color:#6b7280">No hay productos</div>';
-    return;
-  }
-
-  lista.forEach(p => {
-    const card = document.createElement('article');
-    card.className = 'card';
-
-    let colorHTML = '';
-    if (Array.isArray(p.colores) && p.colores.length > 1) {
-      colorHTML = `
-        <select class="color-select" data-id="${escapeHtml(p.id)}">
-          ${p.colores.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')}
-        </select>
-      `;
-    }
-
-    let imagenHTML = '';
-    if (Array.isArray(p.imagenes) && p.imagenes.length > 1) {
-      const imgs = p.imagenes.map((img, idx) =>
-        `<img src="${escapeHtml(img)}" class="carousel-img ${idx === 0 ? 'active' : ''}" alt="${escapeHtml(p.nombre)}">`
-      ).join('');
-      imagenHTML = `
-        <div class="carousel" data-id="${escapeHtml(p.id)}">
-          <button class="carousel-btn prev" aria-label="Anterior">‹</button>
-          <div class="carousel-track">${imgs}</div>
-          <button class="carousel-btn next" aria-label="Siguiente">›</button>
-        </div>
-      `;
-    } else {
-      const imgSrc = p.imagenes && p.imagenes.length ? p.imagenes[0] : p.imagen;
-      imagenHTML = `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(p.nombre)}">`;
-    }
-
-    card.innerHTML = `
-      <div class="card-image">
-        ${imagenHTML}
-      </div>
-      <div class="card-info">
-        <h3>${escapeHtml(p.nombre)}</h3>
-        <div class="price">$${Number(p.precio).toFixed(2)} MXN</div>
-        <div class="mayoreo">
-          Mayoreo: $${Number(p.precioMayoreo).toFixed(2)} desde ${p.minMayoreo} pzas
-        </div>
-      </div>
-      <div class="card-actions">
-        ${colorHTML}
-        <button class="btn" data-id="${escapeHtml(p.id)}">Agregar al carrito</button>
-      </div>
-    `;
-
-    catalogoEl.appendChild(card);
-  }); // cierre del forEach
-} // cierre de la función renderProductos
-
-/****************************************************
- * CARRUSEL: manejar flechas
- ****************************************************/
-document.addEventListener('click', e => {
-  const prevBtn = e.target.closest('.carousel-btn.prev');
-  const nextBtn = e.target.closest('.carousel-btn.next');
-  if (prevBtn || nextBtn) {
-    const carousel = e.target.closest('.carousel');
-    if (!carousel) return;
-    const imgs = carousel.querySelectorAll('.carousel-img');
-    let current = Array.from(imgs).findIndex(img => img.classList.contains('active'));
-    imgs[current].classList.remove('active');
-    if (prevBtn) {
-      current = (current - 1 + imgs.length) % imgs.length;
-    } else {
-      current = (current + 1) % imgs.length;
-    }
-    imgs[current].classList.add('active');
-  }
-});
-
-
-  /****************************************************
-   * FILTRADO (búsqueda + categoría)
+   * FILTRADO
    ****************************************************/
   function applyFilters() {
-    const q = (lastSearch || '').trim().toLowerCase();
+    const q = lastSearch.toLowerCase();
 
     const filtrados = productos.filter(p => {
-      const nombre = (p.nombre || '').toLowerCase();
-      const descripcion = (p.descripcion || '').toLowerCase();
-      const categoria = (p.categoria || '').toLowerCase();
+      const textMatch =
+        p.nombre.toLowerCase().includes(q) ||
+        p.descripcion.toLowerCase().includes(q);
 
-      const textMatch = q === '' || nombre.includes(q) || descripcion.includes(q);
-      const catMatch = activeCategory === 'todos' || categoria === activeCategory;
+      const catMatch =
+        activeCategory === 'todos' ||
+        p.categoria.toLowerCase() === activeCategory;
 
       return textMatch && catMatch;
     });
@@ -211,89 +109,85 @@ document.addEventListener('click', e => {
   }
 
   /****************************************************
+   * RENDER PRODUCTOS
+   ****************************************************/
+  function renderProductos(lista) {
+    catalogoEl.innerHTML = '';
+
+    if (!lista.length) {
+      catalogoEl.innerHTML =
+        '<div style="padding:18px;color:#6b7280">No hay productos</div>';
+      return;
+    }
+
+    lista.forEach(p => {
+      const card = document.createElement('article');
+      card.className = 'card';
+
+      const colorHTML =
+        p.colores.length > 1
+          ? `<select class="color-select" data-id="${p.id}">
+              ${p.colores.map(c => `<option>${c}</option>`).join('')}
+            </select>`
+          : '';
+
+      card.innerHTML = `
+        <img src="${p.imagen}">
+        <h3>${p.nombre}</h3>
+        <div class="price">$${p.precio.toFixed(2)} MXN</div>
+        <div class="mayoreo">
+          Mayoreo: $${p.precioMayoreo.toFixed(2)} desde ${p.minMayoreo}
+        </div>
+        ${colorHTML}
+        <button class="btn" data-id="${p.id}">Agregar al carrito</button>
+      `;
+
+      catalogoEl.appendChild(card);
+    });
+  }
+
+  /****************************************************
    * BUSCADOR
    ****************************************************/
   if (searchInput) {
     searchInput.addEventListener('input', e => {
-      lastSearch = e.target.value || '';
+      lastSearch = e.target.value;
       applyFilters();
     });
   }
 
   /****************************************************
-   * BOTONES DE CATEGORÍA
-   ****************************************************/
-  if (categoryButtons && categoryButtons.length) {
-    categoryButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        categoryButtons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        activeCategory = (btn.dataset.filter || 'Todos').toString().trim().toLowerCase();
-        applyFilters();
-      });
-    });
-  }
-
-  /****************************************************
-   * CARRITO
+   * CARRITO 
    ****************************************************/
   function saveCart() {
     localStorage.setItem('amat_carrito_v1', JSON.stringify(carrito));
   }
 
   function updateBadge() {
-    const cantidad = carrito.reduce((s, i) => s + (i.cantidad || 0), 0);
-    if (!cartBadge) return;
-    cartBadge.style.display = cantidad > 0 ? 'flex' : 'none';
-    cartBadge.textContent = cantidad;
+    const total = carrito.reduce((s, i) => s + i.cantidad, 0);
+    cartBadge.style.display = total ? 'flex' : 'none';
+    cartBadge.textContent = total;
   }
 
   function renderCart() {
-    if (!cartBody || !cartTotalEl) return;
     cartBody.innerHTML = '';
-
-    if (carrito.length === 0) {
-      cartBody.innerHTML =
-        '<div style="padding:18px;color:#6b7280">Tu carrito está vacío</div>';
-      cartTotalEl.textContent = '0';
-      updateBadge();
-      return;
-    }
-
     let total = 0;
 
-    carrito.forEach((item, index) => {
-      const precioUnit =
+    carrito.forEach((item, i) => {
+      const precio =
         item.cantidad >= item.minMayoreo
           ? item.precioMayoreo
           : item.precio;
 
-      total += precioUnit * item.cantidad;
+      total += precio * item.cantidad;
 
-      // Mostrar color solo si item.color tiene contenido
-      const nombreConColor = item.color && item.color.toString().trim() !== ''
-        ? `${escapeHtml(item.nombre)} (${escapeHtml(item.color)})`
-        : escapeHtml(item.nombre);
-
-      const node = document.createElement('div');
-      node.className = 'cart-item';
-
-      node.innerHTML = `
-        <img src="${escapeHtml(item.imagen)}">
-        <div class="meta">
-          <b>${nombreConColor}</b>
-          <div style="font-size:13px;color:#6b7280">
-            $${Number(precioUnit).toFixed(2)} MXN c/u
-          </div>
-        </div>
-        <div>
-          <input class="qty" type="number" min="1" value="${item.cantidad}" data-index="${index}">
-          <button class="small-btn" data-remove="${index}">Eliminar</button>
-        </div>
+      const div = document.createElement('div');
+      div.innerHTML = `
+        <strong>${item.nombre} (${item.color || ''})</strong>
+        <input type="number" min="1" value="${item.cantidad}" data-i="${i}">
+        <button data-rm="${i}">✕</button>
       `;
-
-      cartBody.appendChild(node);
+      cartBody.appendChild(div);
     });
 
     cartTotalEl.textContent = total.toFixed(2);
@@ -301,135 +195,34 @@ document.addEventListener('click', e => {
   }
 
   /****************************************************
-   * EVENTOS CATÁLOGO (agregar al carrito)
-   ****************************************************/
-  if (catalogoEl) {
-    catalogoEl.addEventListener('click', e => {
-      const btn = e.target.closest('button[data-id]');
-      if (!btn) return;
-
-      const id = String(btn.dataset.id);
-      const p = productos.find(x => String(x.id) === id);
-      if (!p) return;
-
-      // Si existe select (varios colores) usamos su valor.
-      // Si no existe select pero p.colores tiene al menos 1 elemento, usamos el primero.
-      // Si no hay colores, dejamos color como cadena vacía ''.
-      const select = document.querySelector(`.color-select[data-id="${id}"]`);
-      const color = select
-        ? select.value
-        : (Array.isArray(p.colores) && p.colores.length > 0 ? p.colores[0] : '');
-
-      const existing = carrito.find(x => String(x.id) === String(p.id) && x.color === color);
-
-      if (existing) existing.cantidad = (existing.cantidad || 0) + 1;
-      else carrito.push({ ...p, color, cantidad: 1 });
-
-      saveCart();
-      renderCart();
-    });
-  }
-
-  // cambiar cantidad en carrito y eliminar
-  if (cartBody) {
-    cartBody.addEventListener('change', e => {
-      const input = e.target.closest('input.qty');
-      if (!input) return;
-
-      const idx = Number(input.dataset.index);
-      carrito[idx].cantidad = parseInt(input.value, 10) || 1;
-
-      saveCart();
-      renderCart();
-    });
-
-    cartBody.addEventListener('click', e => {
-      const rm = e.target.closest('button[data-remove]');
-      if (!rm) return;
-
-      carrito.splice(Number(rm.dataset.remove), 1);
-      saveCart();
-      renderCart();
-    });
-  }
-
-  /****************************************************
-   * ABRIR / CERRAR CARRITO
+   * ABRIR / CERRAR CARRITO 
    ****************************************************/
   function openCart() {
-    if (!cartPanel || !overlay) return;
     cartPanel.classList.add('open');
     overlay.classList.add('show');
   }
 
   function closeCartPanel() {
-    if (!cartPanel || !overlay) return;
     cartPanel.classList.remove('open');
     overlay.classList.remove('show');
   }
 
-  if (cartBtn) {
-    cartBtn.addEventListener('click', () =>
-      cartPanel.classList.contains('open') ? closeCartPanel() : openCart()
-    );
-  }
-  if (closeCart) closeCart.addEventListener('click', closeCartPanel);
-  if (overlay) overlay.addEventListener('click', closeCartPanel);
+  cartBtn.addEventListener('click', () =>
+    cartPanel.classList.contains('open')
+      ? closeCartPanel()
+      : openCart()
+  );
+
+  closeCart.addEventListener('click', closeCartPanel);
+  overlay.addEventListener('click', closeCartPanel);
 
   /****************************************************
-   * ENVIAR PEDIDO
+   * INIT
    ****************************************************/
-  if (submitBtn) {
-    submitBtn.addEventListener('click', () => {
-      if (carrito.length === 0) return alert('El carrito está vacío');
-
-      const nombre = document.getElementById('nombre').value.trim();
-      const telefono = document.getElementById('telefono').value.trim();
-      const direccion = document.getElementById('direccion').value.trim();
-      const email = document.getElementById('email').value.trim();
-
-      if (!nombre || !telefono || !direccion || !email)
-        return alert('Completa tus datos');
-
-      const pedidoTexto = carrito
-        .map(i => {
-          const nombreConColor = i.color && i.color.toString().trim() !== '' ? `${i.nombre} (${i.color})` : i.nombre;
-          const precioUnit = i.cantidad >= i.minMayoreo ? i.precioMayoreo : i.precio;
-          return `${nombreConColor} x${i.cantidad} = $${(precioUnit * i.cantidad).toFixed(2)}`;
-        })
-        .join('\n');
-
-      const fd = new FormData();
-      fd.append(ENTRY.nombre, nombre);
-      fd.append(ENTRY.telefono, telefono);
-      fd.append(ENTRY.direccion, direccion);
-      fd.append(ENTRY.email, email);
-      fd.append(ENTRY.pedido, pedidoTexto);
-      fd.append(ENTRY.total, cartTotalEl.textContent);
-
-      fetch(FORM_URL, {
-        method: 'POST',
-        body: fd,
-        mode: 'no-cors'
-      })
-        .then(() => {
-          alert('Pedido enviado con éxito');
-          carrito = [];
-          saveCart();
-          renderCart();
-          closeCartPanel();
-        })
-        .catch(() => alert('Error al enviar pedido'));
-    });
-  }
-  
-/****************************************************
- * INIT
- ****************************************************/
-renderCart();
-cargarProductos().then(() => {
-  renderCategoryButtons(); // genera los botones de categoría dinámicamente
+  renderCart();
+  cargarProductos();
 });
+
 
 
 
