@@ -224,6 +224,70 @@ document.addEventListener('DOMContentLoaded', () => {
       catalogoEl.appendChild(card);
     });
   }
+  /****************************************************
+ * CARRITO
+ ****************************************************/
+function saveCart() {
+  localStorage.setItem('amat_carrito_v1', JSON.stringify(carrito));
+}
+
+function updateBadge() {
+  const cantidad = carrito.reduce((s, i) => s + (i.cantidad || 0), 0);
+  if (!cartBadge) return;
+  cartBadge.style.display = cantidad > 0 ? 'flex' : 'none';
+  cartBadge.textContent = cantidad;
+}
+
+function renderCart() {
+  if (!cartBody || !cartTotalEl) return;
+  cartBody.innerHTML = '';
+
+  if (carrito.length === 0) {
+    cartBody.innerHTML =
+      '<div style="padding:18px;color:#6b7280">Tu carrito está vacío</div>';
+    cartTotalEl.textContent = '0';
+    updateBadge();
+    return;
+  }
+
+  let total = 0;
+
+  carrito.forEach((item, index) => {
+    const precioUnit =
+      item.cantidad >= item.minMayoreo
+        ? item.precioMayoreo
+        : item.precio;
+
+    total += precioUnit * item.cantidad;
+
+    const nombreConColor = item.color && item.color.toString().trim() !== ''
+      ? `${escapeHtml(item.nombre)} (${escapeHtml(item.color)})`
+      : escapeHtml(item.nombre);
+
+    const node = document.createElement('div');
+    node.className = 'cart-item';
+
+    node.innerHTML = `
+      <img src="${escapeHtml(item.imagen)}">
+      <div class="meta">
+        <b>${nombreConColor}</b>
+        <div style="font-size:13px;color:#6b7280">
+          $${Number(precioUnit).toFixed(2)} MXN c/u
+        </div>
+      </div>
+      <div>
+        <input class="qty" type="number" min="1" value="${item.cantidad}" data-index="${index}">
+        <button class="small-btn" data-remove="${index}">Eliminar</button>
+      </div>
+    `;
+
+    cartBody.appendChild(node);
+  });
+
+  cartTotalEl.textContent = total.toFixed(2);
+  updateBadge();
+}
+
 
   /****************************************************
    * INIT
@@ -231,6 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCart();
   cargarProductos();
 });
+
 
 
 
