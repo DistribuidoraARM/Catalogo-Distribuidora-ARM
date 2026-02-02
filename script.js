@@ -1,29 +1,4 @@
 
-/****************************************************
- * CONFIGURACIÓN GOOGLE SHEETS
- ****************************************************/
-const SHEET_ID = '1ZYDo3phbc-IhaD-blVlaH7gbYkoyjhhX-I7Dtm06Cuo';
-const params = new URLSearchParams(window.location.search);
-const catalogoSeleccionado = params.get('catalogo') || 'ClienteA';
-const SHEET_URL = `https://opensheet.elk.sh/${SHEET_ID}/${catalogoSeleccionado}`;
-
-/****************************************************
- * CONFIGURACIÓN GOOGLE FORMS
- ****************************************************/
-const FORM_URL =
-  'https://docs.google.com/forms/d/e/1FAIpQLSe4qzkJIvgWWS0OhKrrOu2BJbuaHRNR5skoWoFQW3Sv-3430Q/formResponse';
-
-const ENTRY = {
-  nombre: 'entry.313556667',
-  telefono: 'entry.675797328',
-  direccion: 'entry.1917704239',
-  email: 'entry.865391267',
-  pedido: 'entry.889150100',
-  total: 'entry.1238815983'
-};
-
-/****************************************************
- * VARIABLES GLOBALES
  ****************************************************/
 let productos = [];
 let carrito = JSON.parse(localStorage.getItem('amat_carrito_v1') || '[]');
@@ -47,7 +22,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let activeCategory = 'todos';
   let lastSearch = '';
+/****************************************************
+ * BOTONES DE CATEGORÍA AUTOMÁTICOS
+ ****************************************************/
+function renderCategoryButtons() {
+  const container = document.getElementById('category-buttons');
+  if (!container) return;
 
+  // Sacar categorías únicas desde productos
+  const categorias = [...new Set(productos.map(p => p.categoria.toLowerCase()))];
+
+  // Siempre incluir "todos"
+  container.innerHTML = `<button class="filter-btn active" data-filter="todos">Todos</button>`;
+
+  categorias.forEach(cat => {
+    container.innerHTML += `<button class="filter-btn" data-filter="${cat}">${cat}</button>`;
+  });
+
+  // Reasignar eventos
+  const categoryButtons = container.querySelectorAll('.filter-btn');
+  categoryButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      categoryButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeCategory = (btn.dataset.filter || 'todos')
+        .toString()
+        .trim()
+        .toLowerCase();
+      applyFilters();
+    });
+  });
+}
+  
   /****************************************************
    * CARGAR PRODUCTOS
    ****************************************************/
@@ -421,6 +427,7 @@ document.addEventListener('click', e => {
   renderCart();
   cargarProductos();
 });
+
 
 
 
