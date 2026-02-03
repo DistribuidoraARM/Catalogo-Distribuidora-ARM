@@ -4,7 +4,7 @@
 const SHEET_ID = '1ZYDo3phbc-IhaD-blVlaH7gbYkoyjhhX-I7Dtm06Cuo';
 const params = new URLSearchParams(window.location.search);
 const catalogoSeleccionado = params.get('catalogo') || 'ClienteA';
-const SHEET_URL = `https://opensheet.elk.sh/${SHEET_ID}/${catalogoSeleccionado}?nocache=${Date.now()}`;
+const SHEET_URL = `https://opensheet.elk.sh/${SHEET_ID}/${catalogoSeleccionado}`;
 
 /****************************************************
  * CONFIGURACIÓN GOOGLE FORMS
@@ -28,6 +28,17 @@ let productos = [];
 let carrito = JSON.parse(localStorage.getItem('amat_carrito_v1') || '[]');
 
 /****************************************************
+ * HELPERS
+ ****************************************************/
+function normalizarCategoria(str) {
+  return (str || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+/****************************************************
  * DOM READY
  ****************************************************/
 document.addEventListener('DOMContentLoaded', () => {
@@ -40,8 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const cartTotalEl = document.getElementById('cart-total');
   const closeCart = document.getElementById('close-cart');
   const submitBtn = document.getElementById('submit-order');
-
   const searchInput = document.getElementById('search');
+
   let activeCategory = 'todos';
   let lastSearch = '';
 
@@ -54,8 +65,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!res.ok) throw new Error('Error al cargar Sheet');
       const data = await res.json();
 
-      console.log("Primer producto crudo:", data[0]);
-
       productos = data.map(row => ({
         id: String(row.id || Math.random().toString(36).slice(2, 9)),
         nombre: row.nombre || '',
@@ -63,21 +72,15 @@ document.addEventListener('DOMContentLoaded', () => {
         precio: Number(row.precio) || 0,
         precioMayoreo: Number(row.precio_mayoreo) || 0,
         minMayoreo: Number(row.minimo_mayoreo) || 0,
-        categoria: (
-          row.categoria ||
-          row.Categoria ||
-          row.categoría ||
-          'Otros'
-        ).trim(),
+        categoria: row.categoria || 'Otros',
+        categoriaNorm: normalizarCategoria(row.categoria || 'Otros'),
         colores: row.colores
           ? row.colores.split(',').map(c => c.trim()).filter(Boolean)
           : [],
         imagenes: row.imagen
-          ? row.imagen.split(',').map(url => url.trim()).filter(Boolean)
+          ? row.imagen.split(',').map(i => i.trim()).filter(Boolean)
           : []
       }));
-
-      console.log("Categorías detectadas:", productos.map(p => p.categoria));
 
       renderCategoryButtons();
       applyFilters();
@@ -95,10 +98,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!container) return;
 
     const categorias = [
-      'todos',
-      ...new Set(
-        productos.map(p => (p.categoria || 'otros').trim().toLowerCase())
-      )
+      { label: 'Todos', value: 'todos' },
+      ...[...new Map(
+        productos.map(p => [
+          p.categoriaNorm,
+          { label: p.categoria, value: p.categoriaNorm }
+        ])
+      ).values()]
     ];
 
     container.innerHTML = '';
@@ -106,15 +112,17 @@ document.addEventListener('DOMContentLoaded', () => {
     categorias.forEach(cat => {
       const btn = document.createElement('button');
       btn.className = 'filter-btn';
-      if (cat === activeCategory) btn.classList.add('active');
+      if (cat.value === activeCategory) btn.classList.add('active');
 
-      btn.dataset.filter = cat;
-      btn.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+      btn.dataset.filter = cat.value;
+      btn.textContent = cat.label;
 
       btn.addEventListener('click', () => {
-        container.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        container.querySelectorAll('.filter-btn')
+          .forEach(b => b.classList.remove('active'));
+
         btn.classList.add('active');
-        activeCategory = cat;
+        activeCategory = cat.value;
         applyFilters();
       });
 
@@ -123,53 +131,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /****************************************************
-   * FILTRADO (búsqueda + categoría)
+   * RENDER PRODUCTOS
    ****************************************************/
-  function applyFilters() {
-    const q = (lastSearch || '').trim().toLowerCase();
-
-    const filtrados = productos.filter(p => {
-      const nombre = (p.nombre || '').toLowerCase();
-      const descripcion = (p.descripcion || '').toLowerCase();
-      const categoria = (p.categoria || '').toLowerCase();
-
-      const textMatch = q === '' || nombre.includes(q) || descripcion.includes(q);
-      const catMatch = activeCategory === 'todos' || categoria === activeCategory.toLowerCase();
-
-      return textMatch && catMatch;
-    });
-
-    renderProductos(filtrados);
-  }
-
-  /****************************************************
-   * BUSCADOR
-   ****************************************************/
-  if (searchInput) {
-    searchInput.addEventListener('input', e => {
-      lastSearch = e.target.value || '';
-      applyFilters();
-    });
-  }
-
-  /****************************************************
-   * RENDER CATÁLOGO
-   ****************************************************/
-  function escapeHtml(str) {
-    if (str === null || str === undefined) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
-
   function renderProductos(lista = productos) {
     if (!catalogoEl) return;
     catalogoEl.innerHTML = '';
 
-    if (!lista || lista.length === 0) {
+    if (!lista.length) {
       catalogoEl.innerHTML = '<div style="padding:18px;color:#6b7280">No hay productos</div>';
       return;
     }
@@ -178,128 +146,76 @@ document.addEventListener('DOMContentLoaded', () => {
       const card = document.createElement('article');
       card.className = 'card';
 
-      let colorHTML = '';
-      if (Array.isArray(p.colores) && p.colores.length > 1) {
-        colorHTML = `
-          <select class="color-select" data-id="${escapeHtml(p.id)}">
-            ${p.colores.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')}
-          </select>
-        `;
-      }
+      const colorHTML =
+        p.colores.length > 1
+          ? `<select class="color-select" data-id="${p.id}">
+              ${p.colores.map(c => `<option value="${c}">${c}</option>`).join('')}
+            </select>`
+          : '';
 
-      let imagenHTML = '';
-      if (Array.isArray(p.imagenes) && p.imagenes.length > 1) {
-        const imgs = p.imagenes.map((img, idx) =>
-          `<img src="${escapeHtml(img)}" class="carousel-img ${idx === 0 ? 'active' : ''}" alt="${escapeHtml(p.nombre)}">`
-        ).join('');
-        imagenHTML = `
-          <div class="carousel" data-id="${escapeHtml(p.id)}">
-            <button class="carousel-btn prev" aria-label="Anterior">‹</button>
-            <div class="carousel-track">${imgs}</div>
-            <button class="carousel-btn next" aria-label="Siguiente">›</button>
-          </div>
-        `;
-      } else {
-        const imgSrc = p.imagenes && p.imagenes.length ? p.imagenes[0] : p.imagen;
-        imagenHTML = `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(p.nombre)}">`;
-      }
+      const imagenHTML =
+        p.imagenes.length > 1
+          ? `<div class="carousel" data-id="${p.id}">
+              <button class="carousel-btn prev">‹</button>
+              <div class="carousel-track">
+                ${p.imagenes.map((img, i) =>
+                  `<img src="${img}" class="carousel-img ${i === 0 ? 'active' : ''}">`
+                ).join('')}
+              </div>
+              <button class="carousel-btn next">›</button>
+            </div>`
+          : `<img src="${p.imagenes[0] || ''}">`;
 
       card.innerHTML = `
-        <div class="card-image">
-          ${imagenHTML}
-        </div>
+        <div class="card-image">${imagenHTML}</div>
         <div class="card-info">
-          <h3>${escapeHtml(p.nombre)}</h3>
-          <div class="price">$${Number(p.precio).toFixed(2)} MXN</div>
+          <h3>${p.nombre}</h3>
+          <div class="price">$${p.precio.toFixed(2)} MXN</div>
           <div class="mayoreo">
-            Mayoreo: $${Number(p.precioMayoreo).toFixed(2)} desde ${p.minMayoreo} pzas
+            Mayoreo: $${p.precioMayoreo.toFixed(2)} desde ${p.minMayoreo} pzas
           </div>
         </div>
         <div class="card-actions">
           ${colorHTML}
-          <button class="btn" data-id="${escapeHtml(p.id)}">Agregar al carrito</button>
+          <button class="btn" data-id="${p.id}">Agregar al carrito</button>
         </div>
       `;
 
       catalogoEl.appendChild(card);
     });
   }
+
   /****************************************************
- * CARRITO
- ****************************************************/
-function saveCart() {
-  localStorage.setItem('amat_carrito_v1', JSON.stringify(carrito));
-}
+   * FILTROS
+   ****************************************************/
+  function applyFilters() {
+    const q = lastSearch.trim().toLowerCase();
 
-function updateBadge() {
-  const cantidad = carrito.reduce((s, i) => s + (i.cantidad || 0), 0);
-  if (!cartBadge) return;
-  cartBadge.style.display = cantidad > 0 ? 'flex' : 'none';
-  cartBadge.textContent = cantidad;
-}
+    const filtrados = productos.filter(p => {
+      const textMatch =
+        !q ||
+        p.nombre.toLowerCase().includes(q) ||
+        p.descripcion.toLowerCase().includes(q);
 
-function renderCart() {
-  if (!cartBody || !cartTotalEl) return;
-  cartBody.innerHTML = '';
+      const catMatch =
+        activeCategory === 'todos' ||
+        p.categoriaNorm === activeCategory;
 
-  if (carrito.length === 0) {
-    cartBody.innerHTML =
-      '<div style="padding:18px;color:#6b7280">Tu carrito está vacío</div>';
-    cartTotalEl.textContent = '0';
-    updateBadge();
-    return;
+      return textMatch && catMatch;
+    });
+
+    renderProductos(filtrados);
   }
 
-  let total = 0;
-
-  carrito.forEach((item, index) => {
-    const precioUnit =
-      item.cantidad >= item.minMayoreo
-        ? item.precioMayoreo
-        : item.precio;
-
-    total += precioUnit * item.cantidad;
-
-    const nombreConColor = item.color && item.color.toString().trim() !== ''
-      ? `${escapeHtml(item.nombre)} (${escapeHtml(item.color)})`
-      : escapeHtml(item.nombre);
-
-    const node = document.createElement('div');
-    node.className = 'cart-item';
-
-    node.innerHTML = `
-      <img src="${escapeHtml(item.imagen)}">
-      <div class="meta">
-        <b>${nombreConColor}</b>
-        <div style="font-size:13px;color:#6b7280">
-          $${Number(precioUnit).toFixed(2)} MXN c/u
-        </div>
-      </div>
-      <div>
-        <input class="qty" type="number" min="1" value="${item.cantidad}" data-index="${index}">
-        <button class="small-btn" data-remove="${index}">Eliminar</button>
-      </div>
-    `;
-
-    cartBody.appendChild(node);
-  });
-
-  cartTotalEl.textContent = total.toFixed(2);
-  updateBadge();
-}
-
+  if (searchInput) {
+    searchInput.addEventListener('input', e => {
+      lastSearch = e.target.value;
+      applyFilters();
+    });
+  }
 
   /****************************************************
    * INIT
    ****************************************************/
-  renderCart();
   cargarProductos();
 });
-
-
-
-
-
-
-
-
