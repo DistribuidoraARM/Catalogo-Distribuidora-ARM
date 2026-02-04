@@ -96,7 +96,7 @@ header h1 {
 .card-image {
   position: relative;
   width: 100%;
-  height: 220px;               /* 🔑 todas iguales */
+  height: 220px;              
   display: flex;
   align-items: center;
   justify-content: center;
@@ -106,7 +106,7 @@ header h1 {
 }
 
 /* ===============================
-   IMÁGENES (SIN RECORTE)
+   IMÁGENES 
    =============================== */
 .card-image img,
 .card-image .carousel-img {
@@ -280,10 +280,14 @@ header h1 {
   border-color: var(--accent);
 }
 
-.search-bar {
-  max-width: 720px;
-  margin: 18px auto;
-  padding: 0 12px;
+.search-bar { ... }
+.search-input-wrap { ... }
+.search-input-wrap:focus-within { ... }
+.search-icon { ... }
+#search { ... }
+.clear-btn { ... }
+.clear-btn:hover { ... }
+
 }
 
 /* ===============================
@@ -294,4 +298,5 @@ header h1 {
   .card h3 { font-size: 1rem; }
   .price { font-size: 1rem; }
 }
+
 
