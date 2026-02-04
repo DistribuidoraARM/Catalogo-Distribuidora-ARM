@@ -425,30 +425,43 @@ button:focus,
   margin-top: auto; /* empuja al fondo */
 }
 /* ===============================
-   ZOOM DINÁMICO CON CURSOR
+   CONTENEDOR DE IMAGEN
    =============================== */
-
 .card-image {
   position: relative;
   overflow: hidden;
   border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
 }
 
+/* ===============================
+   IMÁGENES
+   =============================== */
 .card-image img,
 .card-image .carousel-img {
   width: 100%;
-  height: auto;
-  transition: transform 0.15s ease;
+  height: 100%;
+  max-height: 280px; /* Ajusta si lo necesitas */
+  object-fit: contain; /* Evita deformaciones */
+  transition: transform 0.15s ease, transform-origin 0.05s ease;
   cursor: zoom-in;
+  transform-origin: center center;
 }
 
-/* Zoom activo */
+/* ===============================
+   ZOOM ACTIVO
+   =============================== */
 .card-image.zoom-active img,
 .card-image.zoom-active .carousel-img.active {
   transform: scale(1.8);
 }
 
-/* Evitar problemas en móvil */
+/* ===============================
+   DESACTIVAR EN MÓVIL
+   =============================== */
 @media (hover: none) {
   .card-image img,
   .card-image .carousel-img {
@@ -483,6 +496,7 @@ button:focus,
 .carousel-btn:hover {
   background: rgba(0, 0, 0, 0.75);
 }
+
 
 
 
