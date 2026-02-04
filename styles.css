@@ -425,41 +425,39 @@ button:focus,
   margin-top: auto; /* empuja al fondo */
 }
 /* ===============================
-   ZOOM DE IMÁGENES EN PRODUCTOS
+   ZOOM DINÁMICO CON CURSOR
    =============================== */
 
-/* Contenedor de la imagen */
 .card-image {
   position: relative;
   overflow: hidden;
-  border-radius: 12px; /* se ve más pro */
+  border-radius: 12px;
 }
 
-/* Imagen normal y del carrusel */
 .card-image img,
 .card-image .carousel-img {
   width: 100%;
   height: auto;
-  transition: transform 0.35s ease;
+  transition: transform 0.15s ease;
   cursor: zoom-in;
 }
 
-/* Solo hace zoom a la imagen activa del carrusel */
-.card-image:hover img,
-.card-image:hover .carousel-img.active {
-  transform: scale(1.6);
+/* Zoom activo */
+.card-image.zoom-active img,
+.card-image.zoom-active .carousel-img.active {
+  transform: scale(1.8);
 }
 
-/* Evita que en móvil haga cosas raras */
+/* Evitar problemas en móvil */
 @media (hover: none) {
-  .card-image:hover img,
-  .card-image:hover .carousel-img {
-    transform: none;
+  .card-image img,
+  .card-image .carousel-img {
+    transform: none !important;
   }
 }
 
+
 /* ===============================
-   EXTRA OPCIONAL (recomendado)
    Mejora visual del carrusel
    =============================== */
 
@@ -485,6 +483,7 @@ button:focus,
 .carousel-btn:hover {
   background: rgba(0, 0, 0, 0.75);
 }
+
 
 
 
