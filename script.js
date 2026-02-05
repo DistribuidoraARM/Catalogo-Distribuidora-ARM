@@ -462,25 +462,7 @@ document.querySelectorAll('.carousel').forEach(carousel => {
   // Inicializa
   updateSlide();
 
-  // Zoom dinámico siguiendo cursor
-  const cardImage = carousel.closest('.card-image');
-  cardImage.addEventListener('mousemove', e => {
-    const rect = cardImage.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    cardImage.style.setProperty('--zoom-x', `${x}%`);
-    cardImage.style.setProperty('--zoom-y', `${y}%`);
-  });
-
-  cardImage.addEventListener('mouseenter', () => {
-    cardImage.classList.add('zoom-active');
-  });
-
-  cardImage.addEventListener('mouseleave', () => {
-    cardImage.classList.remove('zoom-active');
-  });
-});
-
+ 
 
 
 
