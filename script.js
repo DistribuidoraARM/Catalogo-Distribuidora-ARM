@@ -9,9 +9,7 @@ const SHEET_URL = `https://opensheet.elk.sh/${SHEET_ID}/${catalogoSeleccionado}`
 /****************************************************
  * CONFIGURACIÓN GOOGLE FORMS
  ****************************************************/
-const FORM_URL =
-  'https://docs.google.com/forms/d/e/1FAIpQLSe4qzkJIvgWWS0OhKrrOu2BJbuaHRNR5skoWoFQW3Sv-3430Q/formResponse';
-
+const FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSe4qzkJIvgWWS0OhKrrOu2BJbuaHRNR5skoWoFQW3Sv-3430Q/formResponse';
 const ENTRY = {
   nombre: 'entry.313556667',
   telefono: 'entry.675797328',
@@ -52,6 +50,10 @@ function escapeHtml(str) {
  * DOM READY
  ****************************************************/
 document.addEventListener('DOMContentLoaded', () => {
+
+  /****************************************************
+   * ELEMENTOS DEL DOM
+   ****************************************************/
   const catalogoEl = document.getElementById('catalogo');
   const cartBtn = document.getElementById('cart-btn');
   const cartBadge = document.getElementById('cart-badge');
@@ -62,7 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeCart = document.getElementById('close-cart');
   const submitBtn = document.getElementById('submit-order');
   const searchInput = document.getElementById('search');
-
   let activeCategory = 'todos';
   let lastSearch = '';
 
@@ -73,8 +74,8 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch(SHEET_URL);
       if (!res.ok) throw new Error('Error al cargar Sheet');
-      const data = await res.json();
 
+      const data = await res.json();
       productos = data.map(row => ({
         id: String(row.id || Math.random().toString(36).slice(2, 9)),
         nombre: row.nombre || '',
@@ -94,6 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       renderCategoryButtons();
       applyFilters();
+
     } catch (err) {
       console.error(err);
       alert('No se pudieron cargar los productos');
@@ -123,14 +125,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const btn = document.createElement('button');
       btn.className = 'filter-btn';
       if (cat.value === activeCategory) btn.classList.add('active');
-
       btn.dataset.filter = cat.value;
       btn.textContent = cat.label;
 
       btn.addEventListener('click', () => {
         container.querySelectorAll('.filter-btn')
           .forEach(b => b.classList.remove('active'));
-
         btn.classList.add('active');
         activeCategory = cat.value;
         applyFilters();
@@ -148,8 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
     catalogoEl.innerHTML = '';
 
     if (!lista.length) {
-      catalogoEl.innerHTML =
-        '<div style="padding:18px;color:#6b7280">No hay productos</div>';
+      catalogoEl.innerHTML = '<div style="padding:18px;color:#6b7280">No hay productos</div>';
       return;
     }
 
@@ -157,25 +156,21 @@ document.addEventListener('DOMContentLoaded', () => {
       const card = document.createElement('article');
       card.className = 'card';
 
-      const colorHTML =
-        p.colores.length > 1
-          ? `<select class="color-select" data-id="${escapeHtml(p.id)}">
-              ${p.colores.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')}
-            </select>`
-          : '';
+      const colorHTML = p.colores.length > 1
+        ? `<select class="color-select" data-id="${escapeHtml(p.id)}">
+            ${p.colores.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')}
+          </select>`
+        : '';
 
-      const imagenHTML =
-        p.imagenes.length > 1
-          ? `<div class="carousel" data-id="${escapeHtml(p.id)}">
-              <button class="carousel-btn prev">‹</button>
-              <div class="carousel-track">
-                ${p.imagenes.map((img, i) =>
-                  `<img src="${escapeHtml(img)}" class="carousel-img ${i === 0 ? 'active' : ''}">`
-                ).join('')}
-              </div>
-              <button class="carousel-btn next">›</button>
-            </div>`
-          : `<img src="${escapeHtml(p.imagenes[0] || '')}">`;
+      const imagenHTML = p.imagenes.length > 1
+        ? `<div class="carousel" data-id="${escapeHtml(p.id)}">
+            <button class="carousel-btn prev">‹</button>
+            <div class="carousel-track">
+              ${p.imagenes.map((img, i) => `<img src="${escapeHtml(img)}" class="carousel-img ${i === 0 ? 'active' : ''}">`).join('')}
+            </div>
+            <button class="carousel-btn next">›</button>
+          </div>`
+        : `<img src="${escapeHtml(p.imagenes[0] || '')}">`;
 
       card.innerHTML = `
         <div class="card-image">${imagenHTML}</div>
@@ -193,105 +188,42 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
 
       catalogoEl.appendChild(card);
-
-      // Inicializar carrusel para esta tarjeta si tiene más de 1 imagen
-      const carousel = card.querySelector('.carousel');
-      if (carousel) initCarousel(carousel);
     });
   }
 
   /****************************************************
- * CARRUSEL + ZOOM CORREGIDO
- ****************************************************/
-document.querySelectorAll('.card').forEach(card => {
-  const carousel = card.querySelector('.carousel');
-  const cardImage = card.querySelector('.card-image');
-  if (!cardImage) return;
+   * CARRUSEL
+   ****************************************************/
+  document.addEventListener('click', e => {
+    const prevBtn = e.target.closest('.carousel-btn.prev');
+    const nextBtn = e.target.closest('.carousel-btn.next');
+    if (!prevBtn && !nextBtn) return;
 
-  // Solo activar zoom si hay imagen única o carrusel con zoom permitido
-  const img = cardImage.querySelector('.carousel-img.active') || cardImage.querySelector('img');
-  if (img) {
-    cardImage.addEventListener('mousemove', e => {
-      if (!cardImage.classList.contains('zoom-active')) return;
+    const carousel = e.target.closest('.carousel');
+    if (!carousel) return;
 
-      const activeImg = cardImage.querySelector('.carousel-img.active') || cardImage.querySelector('img');
-      if (!activeImg) return;
+    const imgs = carousel.querySelectorAll('.carousel-img');
+    let current = [...imgs].findIndex(i => i.classList.contains('active'));
 
-      const rect = cardImage.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 100;
-      const y = ((e.clientY - rect.top) / rect.height) * 100;
-
-      activeImg.style.transformOrigin = `${x}% ${y}%`;
-    });
-
-    cardImage.addEventListener('mouseover', e => {
-      cardImage.classList.add('zoom-active');
-    });
-
-    cardImage.addEventListener('mouseout', e => {
-      cardImage.classList.remove('zoom-active');
-      const activeImg = cardImage.querySelector('.carousel-img.active') || cardImage.querySelector('img');
-      if (activeImg) {
-        activeImg.style.transformOrigin = 'center center';
-        activeImg.style.transform = '';
-      }
-    });
-  }
-
-  // Inicializar carrusel solo si hay más de una imagen
-  if (!carousel) return;
-
-  const track = carousel.querySelector('.carousel-track');
-  const slides = Array.from(track.children);
-  const prevBtn = carousel.querySelector('.carousel-btn.prev');
-  const nextBtn = carousel.querySelector('.carousel-btn.next');
-  let index = 0;
-
-  function updateSlide() {
-    track.style.transform = `translateX(-${index * 100}%)`;
-    slides.forEach((slide, i) => {
-      slide.classList.toggle('active', i === index);
-      if (i !== index) {
-        slide.style.transform = '';
-        slide.style.transformOrigin = 'center center';
-      }
-    });
-  }
-
-  prevBtn.addEventListener('click', () => {
-    index = (index - 1 + slides.length) % slides.length;
-    updateSlide();
+    imgs[current].classList.remove('active');
+    current = prevBtn
+      ? (current - 1 + imgs.length) % imgs.length
+      : (current + 1) % imgs.length;
+    imgs[current].classList.add('active');
+    imgs[current].style.transform = '';
+    imgs[current].style.transformOrigin = 'center center';
   });
-
-  nextBtn.addEventListener('click', () => {
-    index = (index + 1) % slides.length;
-    updateSlide();
-  });
-
-  updateSlide();
-});
-
-
 
   /****************************************************
    * FILTROS
    ****************************************************/
   function applyFilters() {
     const q = lastSearch.trim().toLowerCase();
-
     const filtrados = productos.filter(p => {
-      const textMatch =
-        !q ||
-        p.nombre.toLowerCase().includes(q) ||
-        p.descripcion.toLowerCase().includes(q);
-
-      const catMatch =
-        activeCategory === 'todos' ||
-        p.categoriaNorm === activeCategory;
-
+      const textMatch = !q || p.nombre.toLowerCase().includes(q) || p.descripcion.toLowerCase().includes(q);
+      const catMatch = activeCategory === 'todos' || p.categoriaNorm === activeCategory;
       return textMatch && catMatch;
     });
-
     renderProductos(filtrados);
   }
 
@@ -318,8 +250,7 @@ document.querySelectorAll('.card').forEach(card => {
   function renderCart() {
     cartBody.innerHTML = '';
     if (!carrito.length) {
-      cartBody.innerHTML =
-        '<div style="padding:18px;color:#6b7280">Tu carrito está vacío</div>';
+      cartBody.innerHTML = '<div style="padding:18px;color:#6b7280">Tu carrito está vacío</div>';
       cartTotalEl.textContent = '0';
       updateBadge();
       return;
@@ -328,8 +259,7 @@ document.querySelectorAll('.card').forEach(card => {
     let total = 0;
 
     carrito.forEach((item, i) => {
-      const precioUnit =
-        item.cantidad >= item.minMayoreo ? item.precioMayoreo : item.precio;
+      const precioUnit = item.cantidad >= item.minMayoreo ? item.precioMayoreo : item.precio;
       total += precioUnit * item.cantidad;
 
       const node = document.createElement('div');
@@ -352,6 +282,7 @@ document.querySelectorAll('.card').forEach(card => {
     updateBadge();
   }
 
+  // Evento agregar al carrito
   catalogoEl.addEventListener('click', e => {
     const btn = e.target.closest('button[data-id]');
     if (!btn) return;
@@ -361,14 +292,15 @@ document.querySelectorAll('.card').forEach(card => {
 
     const select = document.querySelector(`.color-select[data-id="${p.id}"]`);
     const color = select ? select.value : '';
-
     const existing = carrito.find(x => x.id === p.id && x.color === color);
+
     existing ? existing.cantidad++ : carrito.push({ ...p, color, cantidad: 1 });
 
     saveCart();
     renderCart();
   });
 
+  // Cambiar cantidad en carrito
   cartBody.addEventListener('change', e => {
     const input = e.target.closest('.qty');
     if (!input) return;
@@ -377,6 +309,7 @@ document.querySelectorAll('.card').forEach(card => {
     renderCart();
   });
 
+  // Eliminar del carrito
   cartBody.addEventListener('click', e => {
     const rm = e.target.closest('[data-remove]');
     if (!rm) return;
@@ -389,6 +322,7 @@ document.querySelectorAll('.card').forEach(card => {
     cartPanel.classList.add('open');
     overlay.classList.add('show');
   }
+
   function closeCartPanel() {
     cartPanel.classList.remove('open');
     overlay.classList.remove('show');
@@ -406,10 +340,10 @@ document.querySelectorAll('.card').forEach(card => {
   submitBtn.addEventListener('click', () => {
     if (!carrito.length) return alert('El carrito está vacío');
 
-    const nombre = document.getElementById('nombre').value.trim();
-    const telefono = document.getElementById('telefono').value.trim();
-    const direccion = document.getElementById('direccion').value.trim();
-    const email = document.getElementById('email').value.trim();
+    const nombre = nombreEl.value.trim();
+    const telefono = telefonoEl.value.trim();
+    const direccion = direccionEl.value.trim();
+    const email = emailEl.value.trim();
 
     if (!nombre || !telefono || !direccion || !email)
       return alert('Completa tus datos');
@@ -437,12 +371,68 @@ document.querySelectorAll('.card').forEach(card => {
       .catch(() => alert('Error al enviar pedido'));
   });
 
-
   /****************************************************
-   * INIT
+   * INICIALIZAR
    ****************************************************/
   renderCart();
   cargarProductos();
+
+  /****************************************************
+   * ZOOM QUE SIGUE AL CURSOR
+   ****************************************************/
+  document.addEventListener('mousemove', e => {
+    const cardImage = e.target.closest('.card-image.zoom-active');
+    if (!cardImage) return;
+    const img = cardImage.querySelector('.carousel-img.active') || cardImage.querySelector('img');
+    if (!img) return;
+    const rect = cardImage.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    img.style.transformOrigin = `${x}% ${y}%`;
+  });
+
+  document.addEventListener('mouseover', e => {
+    const cardImage = e.target.closest('.card-image');
+    if (!cardImage) return;
+    cardImage.classList.add('zoom-active');
+  });
+
+  document.addEventListener('mouseout', e => {
+    const cardImage = e.target.closest('.card-image');
+    if (!cardImage) return;
+    cardImage.classList.remove('zoom-active');
+    const img = cardImage.querySelector('.carousel-img.active') || cardImage.querySelector('img');
+    if (img) img.style.transformOrigin = 'center center';
+  });
+
+  /****************************************************
+   * INICIALIZAR CARRUSELES
+   ****************************************************/
+  document.querySelectorAll('.carousel').forEach(carousel => {
+    const track = carousel.querySelector('.carousel-track');
+    const slides = Array.from(track.children);
+    const prevBtn = carousel.querySelector('.carousel-btn.prev');
+    const nextBtn = carousel.querySelector('.carousel-btn.next');
+    let index = 0;
+
+    function updateSlide() {
+      track.style.transform = `translateX(-${index * 100}%)`;
+      slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
+    }
+
+    prevBtn.addEventListener('click', () => {
+      index = (index - 1 + slides.length) % slides.length;
+      updateSlide();
+    });
+
+    nextBtn.addEventListener('click', () => {
+      index = (index + 1) % slides.length;
+      updateSlide();
+    });
+
+    updateSlide();
+  });
+
 });
 
 
