@@ -206,41 +206,39 @@ document.addEventListener('DOMContentLoaded', () => {
 document.querySelectorAll('.card').forEach(card => {
   const carousel = card.querySelector('.carousel');
   const cardImage = card.querySelector('.card-image');
-
   if (!cardImage) return;
 
-  // Zoom dinámico que sigue al cursor
-  cardImage.addEventListener('mousemove', e => {
-    if (!cardImage.classList.contains('zoom-active')) return;
+  // Solo activar zoom si hay imagen única o carrusel con zoom permitido
+  const img = cardImage.querySelector('.carousel-img.active') || cardImage.querySelector('img');
+  if (img) {
+    cardImage.addEventListener('mousemove', e => {
+      if (!cardImage.classList.contains('zoom-active')) return;
 
-    const img =
-      cardImage.querySelector('.carousel-img.active') ||
-      cardImage.querySelector('img');
+      const activeImg = cardImage.querySelector('.carousel-img.active') || cardImage.querySelector('img');
+      if (!activeImg) return;
 
-    if (!img) return;
+      const rect = cardImage.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
 
-    const rect = cardImage.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
+      activeImg.style.transformOrigin = `${x}% ${y}%`;
+    });
 
-    img.style.transformOrigin = `${x}% ${y}%`;
-  });
+    cardImage.addEventListener('mouseover', e => {
+      cardImage.classList.add('zoom-active');
+    });
 
-  cardImage.addEventListener('mouseover', e => {
-    cardImage.classList.add('zoom-active');
-  });
+    cardImage.addEventListener('mouseout', e => {
+      cardImage.classList.remove('zoom-active');
+      const activeImg = cardImage.querySelector('.carousel-img.active') || cardImage.querySelector('img');
+      if (activeImg) {
+        activeImg.style.transformOrigin = 'center center';
+        activeImg.style.transform = '';
+      }
+    });
+  }
 
-  cardImage.addEventListener('mouseout', e => {
-    cardImage.classList.remove('zoom-active');
-
-    const img =
-      cardImage.querySelector('.carousel-img.active') ||
-      cardImage.querySelector('img');
-
-    if (img) img.style.transformOrigin = 'center center';
-  });
-
-  // Inicializar carrusel si tiene más de una imagen
+  // Inicializar carrusel solo si hay más de una imagen
   if (!carousel) return;
 
   const track = carousel.querySelector('.carousel-track');
@@ -253,8 +251,10 @@ document.querySelectorAll('.card').forEach(card => {
     track.style.transform = `translateX(-${index * 100}%)`;
     slides.forEach((slide, i) => {
       slide.classList.toggle('active', i === index);
-      // Reset zoom de slides no activos
-      if (i !== index) slide.style.transform = '';
+      if (i !== index) {
+        slide.style.transform = '';
+        slide.style.transformOrigin = 'center center';
+      }
     });
   }
 
@@ -268,7 +268,6 @@ document.querySelectorAll('.card').forEach(card => {
     updateSlide();
   });
 
-  // Inicia con la primera imagen
   updateSlide();
 });
 
@@ -445,6 +444,7 @@ document.querySelectorAll('.card').forEach(card => {
   renderCart();
   cargarProductos();
 });
+
 
 
 
