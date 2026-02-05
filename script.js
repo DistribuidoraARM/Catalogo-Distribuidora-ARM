@@ -434,6 +434,53 @@ document.addEventListener('mouseout', (e) => {
     img.style.transformOrigin = 'center center';
   }
 });
+// Inicializar carruseles
+document.querySelectorAll('.carousel').forEach(carousel => {
+  const track = carousel.querySelector('.carousel-track');
+  const slides = Array.from(track.children);
+  const prevBtn = carousel.querySelector('.carousel-btn.prev');
+  const nextBtn = carousel.querySelector('.carousel-btn.next');
+  let index = 0;
+
+  function updateSlide() {
+    track.style.transform = `translateX(-${index * 100}%)`;
+    slides.forEach((slide, i) => {
+      slide.classList.toggle('active', i === index);
+    });
+  }
+
+  prevBtn.addEventListener('click', () => {
+    index = (index - 1 + slides.length) % slides.length;
+    updateSlide();
+  });
+
+  nextBtn.addEventListener('click', () => {
+    index = (index + 1) % slides.length;
+    updateSlide();
+  });
+
+  // Inicializa
+  updateSlide();
+
+  // Zoom dinámico siguiendo cursor
+  const cardImage = carousel.closest('.card-image');
+  cardImage.addEventListener('mousemove', e => {
+    const rect = cardImage.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    cardImage.style.setProperty('--zoom-x', `${x}%`);
+    cardImage.style.setProperty('--zoom-y', `${y}%`);
+  });
+
+  cardImage.addEventListener('mouseenter', () => {
+    cardImage.classList.add('zoom-active');
+  });
+
+  cardImage.addEventListener('mouseleave', () => {
+    cardImage.classList.remove('zoom-active');
+  });
+});
+
 
 
 
