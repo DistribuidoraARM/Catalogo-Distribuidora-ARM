@@ -17,7 +17,9 @@ const ENTRY = {
   email: 'entry.865391267',
   pedido: 'entry.889150100',
   total: 'entry.1238815983',
-  precioUnitario: 'entry.1479326422'
+  precioUnitario: 'entry.1479326422',
+  subtotal: 'entry.1763806759'
+  
   
 };
 
@@ -364,6 +366,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return `$${p.toFixed(2)}`;
       })
       .join('\n');
+    const subtotalTexto = carrito
+      .map(i => {
+        const p = i.cantidad >= i.minMayoreo ? i.precioMayoreo : i.precio;
+        const sub = p * i.cantidad;
+        return `$${sub.toFixed(2)}`;
+      })
+      .join('\n');
 
     const fd = new FormData();
     fd.append(ENTRY.nombre, nombre);
@@ -373,6 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fd.append(ENTRY.pedido, pedidoTexto);
     fd.append(ENTRY.total, cartTotalEl.textContent);
     fd.append(ENTRY.precioUnitario, precioUnitarioTexto);
+    fd.append(ENTRY.subtotal, subtotalTexto);
 
     fetch(FORM_URL, { method: 'POST', body: fd, mode: 'no-cors' })
       .then(() => {
@@ -433,6 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
   cargarProductos();
 
 }); 
+
 
 
 
