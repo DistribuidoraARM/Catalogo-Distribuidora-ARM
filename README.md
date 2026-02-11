@@ -1,4 +1,4 @@
-# Catálogo Distribuidora AMAT
+# Catálogo Distribuidora ARM
 
 Este es un catálogo interactivo de productos con carrito de compras y envío a Google Sheets.
 
@@ -16,3 +16,4 @@ Este es un catálogo interactivo de productos con carrito de compras y envío a 
 2. Ir a **Settings → Pages**.
 3. Seleccionar la rama `main` y la carpeta `/` como source.
 4. Guardar. El sitio se publicará con un link tipo: `https://usuario.github.io/repo/`
+
