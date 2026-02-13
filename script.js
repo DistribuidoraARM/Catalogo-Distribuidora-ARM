@@ -258,11 +258,18 @@ document.addEventListener('DOMContentLoaded', () => {
     cartBadge.textContent = cantidad;
   }
 
-  function renderCart() {
+function renderCart() {
     cartBody.innerHTML = '';
+    
+    // Referencias seguras a los elementos del DOM
+    const subtotalEl = document.getElementById('cart-subtotal');
+    const ivaEl = document.getElementById('cart-iva');
+
     if (!carrito.length) {
       cartBody.innerHTML = '<div style="padding:18px;color:#6b7280">Tu carrito está vacío</div>';
-      cartTotalEl.textContent = '0';
+      cartTotalEl.textContent = '0.00';
+      if (subtotalEl) subtotalEl.textContent = '0.00';
+      if (ivaEl) ivaEl.textContent = '0.00';
       updateBadge();
       return;
     }
@@ -288,12 +295,15 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
       cartBody.appendChild(node);
     });
-    const subtotalGral = total / 1.16;
-    const ivaGral = total - subtotalGral;
-    document.getElementById('cart-subtotal').textContent = subtotalGral.toFixed(2);
-    document.getElementById('cart-iva').textContent = ivaGral.toFixed(2);
 
+    // CÁLCULO DE DESGLOSE
+    const valSubtotal = total / 1.16;
+    const valIva = total - valSubtotal;
+
+    if (subtotalEl) subtotalEl.textContent = valSubtotal.toFixed(2);
+    if (ivaEl) ivaEl.textContent = valIva.toFixed(2);
     cartTotalEl.textContent = total.toFixed(2);
+    
     updateBadge();
   }
 
@@ -352,7 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
   /****************************************************
    * ENVIAR PEDIDO
    ****************************************************/
-  submitBtn.addEventListener('click', () => {
+ submitBtn.addEventListener('click', () => {
     if (!carrito.length) return alert('El carrito está vacío');
 
     const nombre = nombreEl.value.trim();
@@ -362,6 +372,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!nombre || !telefono || !direccion || !email)
       return alert('Completa tus datos');
+
+    // --- BLOQUE DE CÁLCULO PARA EL ENVÍO ---
+    const totalVenta = parseFloat(cartTotalEl.textContent) || 0;
+    const netoFinal = (totalVenta / 1.16).toFixed(2);
+    const impuestoFinal = (totalVenta - parseFloat(netoFinal)).toFixed(2);
 
     const pedidoTexto = carrito
       .map(i => `${i.nombre}${i.color ? ` (${i.color})` : ''}`)
@@ -393,8 +408,10 @@ document.addEventListener('DOMContentLoaded', () => {
     fd.append(ENTRY.precioUnitario, precioUnitarioTexto);
     fd.append(ENTRY.subtotal, subtotalTexto);
     fd.append(ENTRY.total, cartTotalEl.textContent);
-    fd.append(ENTRY.subtotalGral, neto);
-    fd.append(ENTRY.ivaGral, impuesto);
+    
+    // AQUÍ CORREGIMOS EL ENVÍO USANDO LAS VARIABLES NUEVAS
+    fd.append(ENTRY.subtotalGral, netoFinal);
+    fd.append(ENTRY.ivaGral, impuestoFinal);
 
     fetch(FORM_URL, { method: 'POST', body: fd, mode: 'no-cors' })
       .then(() => {
@@ -404,7 +421,10 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCart();
         closeCartPanel();
       })
-      .catch(() => alert('Error al enviar pedido'));
+      .catch((err) => {
+        console.error(err);
+        alert('Error al enviar pedido');
+      });
   });
 
   /****************************************************
@@ -455,6 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
   cargarProductos();
 
 }); 
+
 
 
 
