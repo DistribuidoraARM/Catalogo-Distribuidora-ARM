@@ -15,37 +15,52 @@
 body { font-family: Inter, system-ui, sans-serif; background: var(--bg); color: #1e293b; line-height: 1.5; }
 
 /* ===================================================
-   HEADER Y PROMO (ACTUALIZADO CON LOGO)
+   HEADER Y PROMO 
    =================================================== */
+
 header {
-  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  color: #fff;
-  padding: 25px 16px; /* Bajamos un poco el padding para que no sea tan alto */
-  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #fff;
+  padding: 25px 16px; /* Ajustado para que el logo no lo haga gigante */
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
 }
 
-/* Contenedor para alinear logo y texto */
 .header-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 18px; 
+  gap: 18px;
   max-width: 1200px;
   margin: 0 auto;
 }
 
 .logo-top {
-  height: 85px; 
+  height: 80px; 
   width: auto;
   background: transparent;
-  filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.2)); 
+  filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.2));
 }
 
 header h1 { 
-  font-size: 2.2rem; 
+  font-size: 2rem; 
   font-weight: 700; 
-  margin: 0;
-  letter-spacing: -0.5px;
+  margin: 0; 
+}
+
+.promo-bar {
+  background: #10b981;
+  color: #fff;
+  text-align: center;
+  padding: 14px;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: .3px;
+}
+
+.container { 
+  max-width: 1280px; 
+  margin: 32px auto; 
+  padding: 0 20px; 
 }
 
 /* ===================================================
@@ -451,6 +466,7 @@ header h1 {
   header h1 { font-size: 1.4rem; }
 
 }
+
 
 
 
