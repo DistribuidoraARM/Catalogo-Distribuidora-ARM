@@ -439,7 +439,48 @@ header h1 {
     width: 100vw;
   }
 }
+/* ===================================================
+   BOTÓN WHATSAPP MINIMALISTA
+   =================================================== */
+.whatsapp-btn {
+  position: fixed;
+  left: 24px; /* Lado izquierdo para equilibrar con el carrito a la derecha */
+  bottom: 24px;
+  background-color: #25d366;
+  color: #ffffff;
+  padding: 12px 20px;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
 
+.whatsapp-btn:hover {
+  transform: scale(1.08);
+  background-color: #128c7e;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+.wa-icon {
+  font-size: 20px;
+}
+
+/* Ajuste para pantallas pequeñas */
+@media (max-width: 480px) {
+  .wa-text { display: none; } /* En celular solo queda el círculo con el icono */
+  .whatsapp-btn { 
+    padding: 15px; 
+    border-radius: 50%;
+    left: 20px;
+    bottom: 20px;
+  }
+}
 /* ===================================================
    RESPONSIVE Y UTILIDADES
    =================================================== */
@@ -468,6 +509,7 @@ header h1 {
   header h1 { font-size: 1.4rem; }
 
 }
+
 
 
 
