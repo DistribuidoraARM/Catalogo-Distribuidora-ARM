@@ -35,7 +35,7 @@ header {
 }
 
 .logo-top {
-  height: 140px;
+  height: 200px;
   width: auto;
   background: transparent;
   filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
@@ -468,6 +468,7 @@ header h1 {
   header h1 { font-size: 1.4rem; }
 
 }
+
 
 
 
