@@ -17,44 +17,47 @@ body { font-family: Inter, system-ui, sans-serif; background: var(--bg); color: 
 /* ===================================================
    HEADER Y PROMO 
    =================================================== */
-
 header {
-  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  color: #fff;
-  padding: 25px 16px; /* Ajustado para que el logo no lo haga gigante */
-  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #ffffff;
+  padding: 20px 16px; 
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+  width: 100%;
 }
 
 .header-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 18px;
+  gap: 20px; 
   max-width: 1200px;
   margin: 0 auto;
 }
 
 .logo-top {
-  height: 80px; 
+  height: 85px; /* Tamaño ideal del logo */
   width: auto;
-  background: transparent;
-  filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.2));
+  background: transparent; /* Asegura que no haya fondo */
+  border: none;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15));
 }
 
 header h1 { 
-  font-size: 2rem; 
+  font-size: 2.2rem; 
   font-weight: 700; 
-  margin: 0; 
+  margin: 0;
+  color: #ffffff;
 }
 
 .promo-bar {
-  background: #10b981;
-  color: #fff;
-  text-align: center;
-  padding: 14px;
-  font-weight: 700;
-  font-size: 1rem;
-  letter-spacing: .3px;
+  background: #10b981;
+  color: #fff;
+  text-align: center;
+  padding: 14px;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: .3px;
+  width: 100%;
 }
 
 .container { 
@@ -62,7 +65,6 @@ header h1 {
   margin: 32px auto; 
   padding: 0 20px; 
 }
-
 /* ===================================================
    GRID Y TARJETAS (ESTRUCTURA)
    =================================================== */
@@ -466,6 +468,7 @@ header h1 {
   header h1 { font-size: 1.4rem; }
 
 }
+
 
 
 
