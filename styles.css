@@ -15,12 +15,12 @@
 body { font-family: Inter, system-ui, sans-serif; background: var(--bg); color: #1e293b; line-height: 1.5; }
 
 /* ===================================================
-   HEADER Y PROMO 
+   HEADER Y PROMO (VERSION FINAL CORREGIDA)
    =================================================== */
 header {
   background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  color: #ffffff;
-  padding: 20px 16px; 
+  color: #fff;
+  padding: 25px 16px; 
   box-shadow: 0 4px 12px rgba(0,0,0,.15);
   width: 100%;
 }
@@ -29,24 +29,22 @@ header {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 20px; 
+  gap: 20px;
   max-width: 1200px;
   margin: 0 auto;
 }
 
 .logo-top {
-  height: 85px; /* Tamaño ideal del logo */
+  height: 80px;
   width: auto;
-  background: transparent; /* Asegura que no haya fondo */
-  border: none;
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15));
+  background: transparent;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
 }
 
 header h1 { 
-  font-size: 2.2rem; 
+  font-size: 2rem; 
   font-weight: 700; 
-  margin: 0;
-  color: #ffffff;
+  margin: 0; 
 }
 
 .promo-bar {
@@ -58,13 +56,15 @@ header h1 {
   font-size: 1rem;
   letter-spacing: .3px;
   width: 100%;
+  display: block;
 }
 
 .container { 
-  max-width: 1280px; 
-  margin: 32px auto; 
-  padding: 0 20px; 
+   max-width: 1280px; 
+   margin: 32px auto;
+   padding: 0 20px; 
 }
+
 /* ===================================================
    GRID Y TARJETAS (ESTRUCTURA)
    =================================================== */
@@ -468,6 +468,7 @@ header h1 {
   header h1 { font-size: 1.4rem; }
 
 }
+
 
 
 
