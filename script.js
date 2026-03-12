@@ -238,13 +238,26 @@ document.addEventListener('DOMContentLoaded', () => {
    * FILTROS Y BUSCADOR
    ****************************************************/
  function applyFilters() {
-    // Usamos normalizarCategoria para limpiar lo que el usuario escribe
-    const q = normalizarCategoria(lastSearch); 
+    // 1. Limpiamos el texto de búsqueda (quitar acentos y espacios)
+    const q = lastSearch
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
     
     const filtrados = productos.filter(p => {
-      const nombreNorm = normalizarCategoria(p.nombre);
-      const descNorm = normalizarCategoria(p.descripcion);
+      // 2. Limpiamos el nombre y descripción del producto para comparar
+      const nombreNorm = (p.nombre || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+        
+      const descNorm = (p.descripcion || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
 
+      // 3. Verificamos si coincide el texto y la categoría
       const textMatch = !q || nombreNorm.includes(q) || descNorm.includes(q);
       const catMatch = activeCategory === 'todos' || p.categoriaNorm === activeCategory;
       
@@ -484,6 +497,7 @@ function renderCart() {
   cargarProductos();
 
 }); 
+
 
 
 
